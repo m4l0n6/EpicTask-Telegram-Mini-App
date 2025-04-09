@@ -7,6 +7,7 @@ const Header: React.FC = () => {
   return (
     <header className="top-0 z-10 sticky bg-background/80 shadow-sm backdrop-blur-sm">
       <div className="mx-auto px-4 py-3 container">
+        {/* Name project */}
         <div className="flex justify-between items-center">
           <Link to="/" className="flex items-center gap-2">
             <span className="bg-clip-text bg-gradient-to-r from-epic-purple to-epic-blue font-bold text-2xl">
