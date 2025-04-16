@@ -13,18 +13,18 @@ const Header: React.FC = () => {
             <span className="bg-clip-text bg-gradient-to-r from-epic-purple to-epic-blue font-bold text-2xl">
               EpicTasks
             </span>
-          </Link>
+          </Link> 
 
           <div className="flex items-center space-x-3">
             <div className="flex items-center">
-              <div className="flex items-center bg-epic-yellow/10 hover:bg-epic-yellow/20 px-3 py-1 border-epic-yellow/30 rounded-full">
+              <Link to='/store' className="flex items-center bg-epic-yellow/10 hover:bg-epic-yellow/20 px-3 py-1 border-epic-yellow/30 rounded-full">
                 <img
-                  src="../public/token.png"
+                  src="../token.png"
                   alt=""
                   className="mr-2 w-8 h-8"
                 />
                 <span className="font-medium text-stone-950">100</span>
-              </div>
+              </Link>
             </div>
 
             <Link

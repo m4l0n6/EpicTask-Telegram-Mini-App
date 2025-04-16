@@ -1,12 +1,27 @@
-import React from "react";
+import React, {useState} from "react";
 import { Link } from "react-router-dom";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "../components/ui/card";
 import { Progress } from "../components/ui/progress";
 import { Button } from "../components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import TaskForm from "@/components/tasks/TaskForm";
+import LevelUp from "@/components/ui/LevelUp";
 import { Sparkles, Crown, Flame, CirclePlus, Trophy, Swords } from "lucide-react";
 
 const HomePage: React.FC = () => {
+  const [showAddDialog, setShowAddDialog] = useState(false);
+  const [showLevelUp, setShowLevelUp] = useState(false);
+  const [newLevel, setNewLevel] = useState(1);
 
+  const simulateLevelUp = () => {
+    setNewLevel(2);
+    setShowLevelUp(true);
+  };
     return (
       <div className="space-y-6">
         {/* Hiển thị tiến độ của người dùng */}
@@ -71,7 +86,8 @@ const HomePage: React.FC = () => {
           <Button
             variant="default"
             size="lg"
-            className="bg-epic-purple hover:bg-epic-purple/90 shadow-md border-2 border-epic-purple/50 h-16 transition-all hover:translate-y-[-2px] transform"
+            className="bg-epic-purple hover:bg-epic-purple/90 shadow-md border-2 border-epic-purple/50 h-16 transition-all hover:translate-y-[-2px] cursor-pointer transform"
+            onClick={() => setShowAddDialog(true)}
           >
             <CirclePlus className="mr-2 w-5 h-5" />
             Start New Quest
@@ -80,7 +96,8 @@ const HomePage: React.FC = () => {
           <Button
             variant="outline"
             size="lg"
-            className="hover:bg-epic-yellow/10 shadow-md border-2 border-epic-yellow/50 h-16 transition-all hover:translate-y-[-2px] transform"
+            className="hover:bg-epic-yellow/10 shadow-md border-2 border-epic-yellow/50 h-16 transition-all hover:translate-y-[-2px] cursor-pointer transform"
+            onClick={simulateLevelUp}
           >
             <Trophy className="mr-2 w-5 h-5 text-epic-yellow" />
             View Leaderboard
@@ -109,13 +126,30 @@ const HomePage: React.FC = () => {
             <CardContent className="py-8 text-center">
               <p className="mb-4 text-muted-foreground">No active quests</p>
               <Button
-                className="bg-epic-purple hover:bg-epic-purple/90"
+                className="bg-epic-purple hover:bg-epic-purple/90 cursor-pointer"
+                onClick={() => setShowAddDialog(true)}
               >
                 Start your first quest
               </Button>
             </CardContent>
           </Card>
         </div>
+
+        <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
+          <DialogContent className="border-2 border-epic-purple/50">
+            <DialogHeader>
+              <DialogTitle className="flex items-center">
+                <Swords className="mr-2 w-5 h-5 text-epic-purple" />
+                Create New Quest
+              </DialogTitle>
+            </DialogHeader>
+            <TaskForm onCancel={() => setShowAddDialog(false)} />
+          </DialogContent>
+        </Dialog>
+
+        {showLevelUp && (
+          <LevelUp level={newLevel} onComplete={() => setShowLevelUp(false)} />
+        )}
       </div>
 
       // Phần trang chủ khi chưa đăng nhập
