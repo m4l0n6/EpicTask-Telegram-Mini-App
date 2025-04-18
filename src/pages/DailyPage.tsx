@@ -1,7 +1,7 @@
 import React from "react";
 import { Calendar, CalendarCheck, Gift } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-
+import LoginStreak from "@/components/daily/LoginStreak";
 
 const DailyPage: React.FC = () => {
     return (
@@ -54,6 +54,16 @@ const DailyPage: React.FC = () => {
               <p className="font-bold text-2xl">100</p>
             </CardContent>
           </Card>
+        </div>
+
+        <LoginStreak />
+
+        <div>
+          <h2 className="flex items-center mb-4 font-bold text-xl">
+            <Gift className="mr-2 w-5 h-5 text-epic-yellow" />
+            Daily Tasks
+          </h2>
+          {/* <DailyTaskList /> */}
         </div>
       </div>
     );

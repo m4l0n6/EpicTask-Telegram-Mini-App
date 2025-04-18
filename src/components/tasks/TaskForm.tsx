@@ -19,12 +19,23 @@ interface TaskFormProps {
 
 
 const TaskForm: React.FC<TaskFormProps> = ({onCancel}) => {
-  const form = useForm();
+  const form = useForm<FormData>();
+  interface FormData {
+    title: string;
+    description: string;
+    deadline: string;
+    xpReward: number;
+  }
+
+  const handleSubmit = (data: FormData) => {
+    console.log("Form submitted:", data);
+  }
 
   return (
     <Form {...form}>
-      <form action="" className="space-y-4">
+      <form action="" className="space-y-4" onSubmit={form.handleSubmit(handleSubmit)}>
         <FormField
+          control={form.control}
           name="title"
           render={({ field }) => (
             <FormItem>
@@ -38,6 +49,7 @@ const TaskForm: React.FC<TaskFormProps> = ({onCancel}) => {
         />
 
         <FormField
+          control={form.control}
           name="description"
           render={({ field }) => (
             <FormItem>
