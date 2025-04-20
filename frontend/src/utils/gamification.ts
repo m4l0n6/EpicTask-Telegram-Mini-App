@@ -4,8 +4,8 @@ import { v4 as uuidv4 } from "uuid";
 export const XP_PER_LEVEL = 100; // Số điểm kinh nghiệm cần để lên cấp
 export const MAX_LEVEL = 50; // Cấp độ tối đa
 
-export const LOGIN_TOKEN_REWARD = 5;
-export const STREAK_BONUS_MULTIPLIER = 0.2; 
+export const LOGIN_TOKEN_REWARD = 5; // Phần thưởng đăng nhập hàng ngày
+export const STREAK_BONUS_MULTIPLIER = 0.2; // Hệ số thưởng cho chuỗi đăng nhập liên tiếp
 
 export const calculateLevel = (xp: number): number => {
   return Math.min(Math.floor(xp / XP_PER_LEVEL) + 1, MAX_LEVEL);
