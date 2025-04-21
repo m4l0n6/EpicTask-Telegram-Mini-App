@@ -1,5 +1,6 @@
 import React, {useState} from "react";
 import { Link } from "react-router-dom";
+import { useTask } from "@/contexts/TaskContext";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "../components/ui/card";
 import { Progress } from "../components/ui/progress";
 import { Button } from "../components/ui/button";
@@ -16,7 +17,33 @@ import { Sparkles, Crown, Flame, CirclePlus, Trophy, Swords } from "lucide-react
 const HomePage: React.FC = () => {
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [showLevelUp, setShowLevelUp] = useState(false);
+  const [showXpGain, setShowXpGain] = useState(false);
+  const [xpAmount, setXpAmount] = useState(0);
   const [newLevel, setNewLevel] = useState(1);
+
+  const {  addTask } = useTask();
+
+  const handleAddTask = (values: {
+    title?: string;
+    description?: string;
+    deadline?: Date;
+    xpReward?: number;
+  }) => {
+    // Convert Date to ISO string for the API
+    const taskData = {
+      title: values.title || "",
+      description: values.description || "",
+      deadline: values.deadline ? values.deadline.toISOString() : null,
+      xpReward: values.xpReward || 10,
+    };
+
+    addTask(taskData);
+    setShowAddDialog(false);
+
+    // Show XP gain animation (simulate reward for creating task)
+    setXpAmount(5);
+    setShowXpGain(true);
+  };
 
   const simulateLevelUp = () => {
     setNewLevel(2);
@@ -143,7 +170,10 @@ const HomePage: React.FC = () => {
                 Create New Quest
               </DialogTitle>
             </DialogHeader>
-            <TaskForm onCancel={() => setShowAddDialog(false)} />
+            <TaskForm
+              onSubmit={handleAddTask}
+              onCancel={() => setShowAddDialog(false)}
+            />
           </DialogContent>
         </Dialog>
 

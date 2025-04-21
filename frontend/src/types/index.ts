@@ -1,31 +1,23 @@
 // Kiểu dữ liệu của người dùng
-export interface User {
-  id: string;
-  username: string | null;
-  avatarUrl: string | null;
-  level: number;
-  xp: number;
-  tokens: number;
-  badges: string[];
-  completedTasks: number;
-  dailyLoginStreak: number;
-  lastDailyLogin: string | null;
-  createdAt: string;
-  lastLoginAt: string | null;
-}
-
-// Kiểu dữ liệu của nhiệm vụ
 export interface Task {
   id: string;
   title: string;
   description: string;
-  deadline: string | null;
+  deadline: string | null; // ISO format string or null
+  completed: boolean;
+  createdAt: string; // ISO format string
   xpReward: number;
   tokenReward: number;
-  completed: boolean;
-  createdAt: string;
-  completedAt: string | null;
-  userId: string;
+}
+
+// Thêm các interface khác cho ứng dụng của bạn nếu cần
+export interface User {
+  level: number;
+  xp: number;
+  tokens: number;
+  streak: number;
+  lastLogin: string | null;
+  badges: string[];
 }
 
 // Kiểu dữ liệu của huy hiệu

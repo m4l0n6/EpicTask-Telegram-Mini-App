@@ -1,0 +1,251 @@
+import React, { useState } from "react";
+import { Task } from '@/types';
+import Loading from '../ui/Loading';
+import { useTask } from "@/contexts/TaskContext";
+import TaskForm from "./TaskForm";
+import { Button } from "@/components/ui/button";
+import TaskCard from "./TaskCard";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Plus, ListFilter } from "lucide-react";
+
+
+const TaskList: React.FC = () => {
+    const { tasks, isLoading, addTask, updateTask } = useTask();
+    const [editingTask, setEditingTask] = useState<Task | null>(null);
+    const [showAddDialog, setShowAddDialog] = useState(false);
+    const [showEditDialog, setShowEditDialog] = useState(false);
+    const [activeTab, setActiveTab] = useState('all');
+    const [sortOption, setSortOption] = useState<'newest' | 'oldest' | 'xp-high' | 'xp-low' | 'deadline'>('newest');
+
+    // Lọc các tác vụ dựa trên tab đang hoạt động
+    const filteredTasks = tasks.filter(task => {
+        if (activeTab === 'all') return true;
+        if (activeTab === 'active') return !task.completed;
+        if (activeTab === 'completed') return task.completed;
+        return true;
+    })
+
+    // Sắp xếp các tác vụ đã lọc
+    const sortedTasks = [...filteredTasks].sort((a, b) => {
+        switch (sortOption) {
+            case 'newest':
+                return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+            case 'oldest':
+                return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+            case 'xp-high':
+                return b.xpReward - a.xpReward;
+            case 'xp-low':
+                return a.xpReward - b.xpReward;
+            case 'deadline':
+                if (!a.deadline) return 1;
+                if (!b.deadline) return -1;
+                return new Date(a.deadline).getTime() - new Date(b.deadline).getTime();
+            default:
+                return 0;
+        }
+    })
+
+    // Xử lý thêm tác vụ
+    const handleAddTask = (values: { title?: string; description?: string; deadline?: Date; xpReward?: number }) => {
+        // Chuyển đổi Date thành chuỗi ISO cho API
+        const taskData: Omit<Task, 'id' | 'completed' | 'createdAt' | 'completedAt' | 'userId'> = {
+            title: values.title || '',
+            description: values.description || '',
+            deadline: values.deadline ? values.deadline.toISOString() : null,
+            xpReward: values.xpReward || 10,
+            tokenReward: Math.ceil((values.xpReward || 10) / 5) // Phần thưởng token mặc định là 1/5 của XP
+        }
+
+        addTask(taskData);
+        setShowAddDialog(false);
+    }
+
+    // Xử lý chỉnh sửa tác vụ
+    const handleEditTask = (task: Task) => {
+        setEditingTask(task);
+        setShowEditDialog(true);
+    }
+
+    // Xử lý cập nhật tác vụ
+    const handleUpdateTask = (values: { title?: string; description?: string; deadline?: Date; xpReward?: number }) => {
+        if (editingTask) {
+            // Chuyển đổi Date thành chuỗi ISO cho API
+            const taskData: Omit<Task, 'id' | 'completed' | 'createdAt' | 'completedAt' | 'userId'> = {
+                title: values.title || '',
+                description: values.description || '',
+                deadline: values.deadline ? values.deadline.toISOString() : null,
+                xpReward: values.xpReward || 10,
+                tokenReward: Math.ceil((values.xpReward || 10) / 5) // Phần thưởng token mặc định là 1/5 của XP
+            }
+
+            updateTask(editingTask.id, taskData);
+            setShowEditDialog(false);
+        }
+    }
+
+    if (isLoading) {
+    return <Loading message="Loading tasks..." />;
+    }
+    return (
+      <div>
+        <div className="flex justify-between items-center mb-4">
+          <Tabs
+            defaultValue="all"
+            value={activeTab}
+            onValueChange={setActiveTab}
+            className="w-full"
+          >
+            <div className="flex justify-between items-center">
+              <TabsList>
+                <TabsTrigger value="all">All Tasks</TabsTrigger>
+                <TabsTrigger value="active">Active</TabsTrigger>
+                <TabsTrigger value="completed">Completed</TabsTrigger>
+              </TabsList>
+
+              <div className="flex items-center gap-2">
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="outline" size="sm">
+                      <ListFilter className="mr-1 w-4 h-4" />
+                      Sort
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem onClick={() => setSortOption("newest")}>
+                      Newest First
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setSortOption("oldest")}>
+                      Oldest First
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setSortOption("xp-high")}>
+                      Highest XP
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setSortOption("xp-low")}>
+                      Lowest XP
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setSortOption("deadline")}>
+                      Earliest Deadline
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+
+                <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
+                  <DialogTrigger asChild>
+                    <Button size="sm">
+                      <Plus className="mr-1 w-4 h-4" />
+                      Add Task
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent>
+                    <DialogHeader>
+                      <DialogTitle>Create a New Task</DialogTitle>
+                    </DialogHeader>
+                    <TaskForm
+                      onSubmit={handleAddTask}
+                      onCancel={() => setShowAddDialog(false)}
+                    />
+                  </DialogContent>
+                </Dialog>
+              </div>
+            </div>
+
+            <TabsContent value="all" className="mt-4">
+              {sortedTasks.length === 0 ? (
+                <div className="py-10 text-center">
+                  <p className="mb-4 text-muted-foreground">No tasks found</p>
+                  <Button onClick={() => setShowAddDialog(true)}>
+                    Create your first task
+                  </Button>
+                </div>
+              ) : (
+                <div className="gap-4 grid grid-cols-1 md:grid-cols-2">
+                  {sortedTasks.map((task) => (
+                    <TaskCard
+                      key={task.id}
+                      task={task}
+                      onEdit={() => handleEditTask(task)}
+                    />
+                  ))}
+                </div>
+              )}
+            </TabsContent>
+
+            <TabsContent value="active" className="mt-4">
+              {sortedTasks.length === 0 ? (
+                <div className="py-10 text-center">
+                  <p className="mb-4 text-muted-foreground">No active tasks</p>
+                  <Button onClick={() => setShowAddDialog(true)}>
+                    Add a new task
+                  </Button>
+                </div>
+              ) : (
+                <div className="gap-4 grid grid-cols-1 md:grid-cols-2">
+                  {sortedTasks.map((task) => (
+                    <TaskCard
+                      key={task.id}
+                      task={task}
+                      onEdit={() => handleEditTask(task)}
+                    />
+                  ))}
+                </div>
+              )}
+            </TabsContent>
+
+            <TabsContent value="completed" className="mt-4">
+              {sortedTasks.length === 0 ? (
+                <div className="py-10 text-center">
+                  <p className="text-muted-foreground">
+                    No completed tasks yet
+                  </p>
+                </div>
+              ) : (
+                <div className="gap-4 grid grid-cols-1 md:grid-cols-2">
+                  {sortedTasks.map((task) => (
+                    <TaskCard
+                      key={task.id}
+                      task={task}
+                      onEdit={() => handleEditTask(task)}
+                    />
+                  ))}
+                </div>
+              )}
+            </TabsContent>
+          </Tabs>
+        </div>
+
+        <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Edit Task</DialogTitle>
+            </DialogHeader>
+            {editingTask && (
+              <TaskForm
+                task={editingTask}
+                onSubmit={handleUpdateTask}
+                onCancel={() => {
+                  setShowEditDialog(false);
+                  setEditingTask(null);
+                }}
+              />
+            )}
+          </DialogContent>
+        </Dialog>
+      </div>
+    );
+}
+
+export default TaskList;
