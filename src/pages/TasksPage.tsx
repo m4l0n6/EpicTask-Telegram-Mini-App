@@ -1,7 +1,8 @@
 
 import React from 'react';
-// import TaskList from '@/components/tasks/TaskList';
+import TaskList from '@/components/tasks/TaskList';
 import { Star, Swords } from 'lucide-react';
+
 
 const TasksPage: React.FC = () => {
   return (
@@ -14,10 +15,8 @@ const TasksPage: React.FC = () => {
           <span className="font-medium">Complete quests to earn XP and level up!</span>
         </div>
       </div>
-      <p className="mb-4 text-muted-foreground">Manage your tasks and track your progress.</p>
-      {/* Uncomment the TaskList component when it's ready */}
-      {/* <TaskList /> */}
-      {/* Placeholder for TaskList component */}
+
+      <TaskList /> 
     </div>
   );
 };

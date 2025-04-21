@@ -10,6 +10,7 @@ import {
 } from "./storage";
 import { initializeDefaultBadges } from "./gamification";
 
+// Mock Telegram WebApp object
 export const mockTelegramWebApp = {
   initData: "mock_init_data",
   initDataUnsafe: {
@@ -41,6 +42,7 @@ export const mockTelegramWebApp = {
   openLink: (url: string) => window.open(url, '_blank'),
 };
 
+// Chức năng này sẽ được gọi khi người dùng đăng nhập vào ứng dụng Telegram
 export const mockTelegramLogin = async (): Promise<User> => {
   // Simulate API delay
   await new Promise((resolve) => setTimeout(resolve, 800));
@@ -86,6 +88,7 @@ export const mockTelegramLogin = async (): Promise<User> => {
   return newUser;
 }
 
+// Danh sách người dùng giả lập
 export const createMockUsers = () => {
   const mockUsers: User[] = [
     {
@@ -173,6 +176,7 @@ export const createMockUsers = () => {
   saveUsers(mockUsers);
 };
 
+// Định nghĩa API
 export const initializeTelegramApi = () => {
   // In a real app, we would connect to the Telegram Mini App SDK here
   // For now, we'll just attach our mock to the window

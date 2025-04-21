@@ -11,8 +11,7 @@ export const calculateLevel = (xp: number): number => {
   return Math.min(Math.floor(xp / XP_PER_LEVEL) + 1, MAX_LEVEL);
 };
 
-
-
+// Tính toán điểm kinh nghiệm dựa trên cấp độ
 export const initializeDefaultBadges = (): Badge[] => {
   const defaultBadges: Badge[] = [
     {
@@ -89,3 +88,5 @@ export const initializeDefaultBadges = (): Badge[] => {
 
   return defaultBadges;
 };
+
+
