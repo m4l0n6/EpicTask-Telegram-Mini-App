@@ -9,25 +9,8 @@ const { bootstrap } = require('./config/bootstrap');
  
 connectDB();  
 
-
-const allowedOrigins = [
-  'http://localhost:5173',
-  'https://task-quest-gamify.lovable.app',
-
-];
-
 const app = express();
-app.use(cors({
-  origin: function (origin, callback) {
-    // Cho phép nếu origin nằm trong danh sách
-    if (!origin || allowedOrigins.includes(origin)) {
-      callback(null, true);
-    } else {
-      callback(new Error('Not allowed by CORS'));
-    }
-  },
-  credentials: true
-}));
+app.use(cors());
 app.use(express.json());
 
 
