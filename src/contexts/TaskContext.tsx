@@ -57,7 +57,6 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       setTasks((prevTasks) => [...prevTasks, newTask]);
       setTasks([...tasks, newTask]);;
-  
     };
 
     const updateTask = (id: string, updates: Partial<Task>) => {

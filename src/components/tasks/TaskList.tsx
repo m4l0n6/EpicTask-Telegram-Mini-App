@@ -61,17 +61,32 @@ const TaskList: React.FC = () => {
 
     // Xử lý thêm tác vụ
     const handleAddTask = (values: { title?: string; description?: string; deadline?: Date; xpReward?: number }) => {
-        // Chuyển đổi Date thành chuỗi ISO cho API
-        const taskData: Omit<Task, 'id' | 'completed' | 'createdAt' | 'completedAt' | 'userId'> = {
-            title: values.title || '',
-            description: values.description || '',
-            deadline: values.deadline ? values.deadline.toISOString() : null,
-            xpReward: values.xpReward || 10,
-            tokenReward: Math.ceil((values.xpReward || 10) / 5) // Phần thưởng token mặc định là 1/5 của XP
-        }
+      // Kiểm tra title không được để trống
+      if (!values.title || values.title.trim() === "") {
+        // Có thể hiển thị thông báo lỗi ở đây
+        return;
+      }
 
-        addTask(taskData);
-        setShowAddDialog(false);
+      // Chuyển đổi Date thành chuỗi ISO cho API
+      const taskData: Omit<
+        Task,
+        "id" | "completed" | "createdAt" | "completedAt" | "userId"
+      > = {
+        title: values.title || "",
+        description: values.description || "",
+        deadline: values.deadline ? values.deadline.toISOString() : null,
+        xpReward: values.xpReward || 10,
+        tokenReward: Math.ceil((values.xpReward || 10) / 5), // Phần thưởng token mặc định là 1/5 của XP
+      };
+
+       try {
+         addTask(taskData);
+         setShowAddDialog(false);
+         // Có thể hiển thị thông báo thành công ở đây
+       } catch (error) {
+         console.error("Lỗi khi thêm nhiệm vụ:", error);
+         // Hiển thị thông báo lỗi
+       }
     }
 
     // Xử lý chỉnh sửa tác vụ

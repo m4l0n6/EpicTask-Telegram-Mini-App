@@ -12,12 +12,20 @@ export interface Task {
 
 // Thêm các interface khác cho ứng dụng của bạn nếu cần
 export interface User {
-  level: number;
-  xp: number;
-  tokens: number;
-  streak: number;
-  lastLogin: string | null;
-  badges: string[];
+  _id?: string;
+  telegramId?: number | string;
+  username: string;
+  avatar?: string;
+  first_name?: string;
+  last_name?: string;
+  tokens?: number;
+  xp?: number;
+  level?: number;
+  lastDailyLogin?: string | null;
+  dailyLoginStreak?: number;
+  lastTaskRefresh?: string | null;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 // Kiểu dữ liệu của huy hiệu
@@ -61,16 +69,7 @@ export interface DailyTask {
   updatedAt: string | null;
 }
 
-// Kiểu dữ liệu của vật phẩm trong cửa hàng
-export interface StoreItem {
-  id: string;
-  title: string;
-  description: string;
-  price: number;
-  type: 'badge' | 'token' | 'item';
-  iconUrl: string;
-  unlockedAt: string | null;
-}
+
 
 // Kiểu dữ liệu của lịch sử giao dịch
 export interface PurchasedItem {

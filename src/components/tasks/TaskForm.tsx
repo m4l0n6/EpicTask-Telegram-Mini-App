@@ -30,8 +30,18 @@ import { zodResolver } from "@hookform/resolvers/zod";
 const taskFormSchema = z.object({
   title: z.string().min(1, "Title is required").max(100, "Title is too long"),
   description: z.string().max(500, "Description is too long"),
-  deadline: z.date().optional().nullable(),
-  xpReward: z.coerce.number().min(1).max(100, "Maximum XP reward is 100"),
+  deadline: z
+    .date({
+      required_error: "Deadline is required",
+    })
+    .min(
+      new Date(new Date().setHours(0, 0, 0, 0)),
+      "Deadline must be in the future"
+    ),
+  xpReward: z.coerce
+    .number({ required_error: "XP reward is required" })
+    .min(1, "Minimum XP reward is 1")
+    .max(100, "Maximum XP reward is 100"),
 });
 
 type TaskFormValues = z.infer<typeof taskFormSchema>;
@@ -50,7 +60,7 @@ const TaskForm: React.FC<TaskFormProps> = ({ task, onSubmit, onCancel }) => {
   const defaultValues: Partial<TaskFormValues> = {
     title: task?.title || "",
     description: task?.description || "",
-    deadline: task?.deadline ? new Date(task.deadline) : null,
+    deadline: task?.deadline ? new Date(task.deadline) : undefined,
     xpReward: task?.xpReward || 10,
   };
 

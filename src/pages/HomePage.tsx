@@ -1,5 +1,7 @@
 import React, {useState} from "react";
 import { Link } from "react-router-dom";
+import { Star } from "lucide-react";
+import { Badge } from "../components/ui/badge";
 import { useTask } from "@/contexts/TaskContext";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "../components/ui/card";
 import { Progress } from "../components/ui/progress";
@@ -12,37 +14,47 @@ import {
 } from "@/components/ui/dialog";
 import TaskForm from "@/components/tasks/TaskForm";
 import LevelUp from "@/components/ui/LevelUp";
-import { Sparkles, Crown, Flame, CirclePlus, Trophy, Swords } from "lucide-react";
+import { Sparkles, Crown, Flame, CirclePlus, Trophy, Swords, CheckCircle } from "lucide-react";
 
 const HomePage: React.FC = () => {
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [showLevelUp, setShowLevelUp] = useState(false);
-  const [showXpGain, setShowXpGain] = useState(false);
-  const [xpAmount, setXpAmount] = useState(0);
+  // const [showXpGain, setShowXpGain] = useState(false);
+  // const [xpAmount, setXpAmount] = useState(0);
   const [newLevel, setNewLevel] = useState(1);
 
-  const {  addTask } = useTask();
+  const { tasks, addTask } = useTask();
 
+  const recentTasks = tasks
+    .filter((task) => !task.completed)
+    .sort(
+      (a, b) =>
+        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+    )
+    .slice(0, 3);
+
+  // Hàm xử lý thêm nhiệm vụ mới
   const handleAddTask = (values: {
     title?: string;
     description?: string;
     deadline?: Date;
     xpReward?: number;
   }) => {
-    // Convert Date to ISO string for the API
+    // Kiểm tra xem người dùng đã nhập tiêu đề chưa
     const taskData = {
       title: values.title || "",
       description: values.description || "",
       deadline: values.deadline ? values.deadline.toISOString() : null,
       xpReward: values.xpReward || 10,
+      tokenReward: Math.ceil((values.xpReward || 10) / 5), // Thêm tokenReward
     };
 
     addTask(taskData);
     setShowAddDialog(false);
 
-    // Show XP gain animation (simulate reward for creating task)
-    setXpAmount(5);
-    setShowXpGain(true);
+    // Giả lập tăng XP
+    // setXpAmount(5);
+    // setShowXpGain(true);
   };
 
   const simulateLevelUp = () => {
@@ -149,17 +161,66 @@ const HomePage: React.FC = () => {
             </Link>
           </div>
 
-          <Card className="border-2 border-epic-purple/30 border-dashed">
-            <CardContent className="py-8 text-center">
-              <p className="mb-4 text-muted-foreground">No active quests</p>
-              <Button
-                className="bg-epic-purple hover:bg-epic-purple/90 cursor-pointer"
-                onClick={() => setShowAddDialog(true)}
-              >
-                Start your first quest
-              </Button>
-            </CardContent>
-          </Card>
+          {recentTasks.length === 0 ? (
+            <Card className="border-2 border-epic-purple/30 border-dashed">
+              <CardContent className="py-8 text-center">
+                <p className="mb-4 text-muted-foreground">No active quests</p>
+                <Button
+                  onClick={() => setShowAddDialog(true)}
+                  className="bg-epic-purple hover:bg-epic-purple/90"
+                >
+                  Start your first quest
+                </Button>
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="space-y-3">
+              {recentTasks.map((task) => {
+                // Get border color based on XP reward
+                let borderClass = "";
+                if (task.xpReward >= 80) borderClass = "border-epic-purple";
+                else if (task.xpReward >= 50) borderClass = "border-epic-blue";
+                else if (task.xpReward >= 30)
+                  borderClass = "border-epic-yellow";
+
+                return (
+                  <Card
+                    key={task.id}
+                    className={`task-card-hover border-2 ${borderClass} transform hover:translate-x-1 transition-all`}
+                  >
+                    <CardContent className="p-4">
+                      <div className="flex justify-between items-start">
+                        <div>
+                          <h3 className="font-medium">{task.title}</h3>
+                          <p className="mt-1 text-muted-foreground text-sm line-clamp-1">
+                            {task.description}
+                          </p>
+                        </div>
+                        <Badge
+                          variant="outline"
+                          className="flex items-center ml-2"
+                        >
+                          <Star className="fill-epic-yellow stroke-epic-yellow mr-1 w-3 h-3" />
+                          {task.xpReward} XP
+                        </Badge>
+                      </div>
+
+                      <Link to="/tasks">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="bg-epic-green/10 hover:bg-epic-green/20 mt-3 border border-muted w-full"
+                        >
+                          <CheckCircle className="mr-2 w-4 h-4" />
+                          Complete Quest
+                        </Button>
+                      </Link>
+                    </CardContent>
+                  </Card>
+                );
+              })}
+            </div>
+          )}
         </div>
 
         <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>

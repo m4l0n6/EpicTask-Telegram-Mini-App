@@ -9,6 +9,7 @@ import TasksPage from "./pages/TasksPage";
 import LeaderboardPage from "./pages/LeaderboardPage";
 import NotificationsPage from "./pages/NotificationsPage";
 import StorePage from "./pages/StorePage";
+import ApiTest from '@/pages/ApiTest';
 
 import { TaskProvider } from "./contexts/TaskContext";
 
@@ -25,6 +26,7 @@ const App = () => (
           <Route path="profile" element={<ProfilePage />} />
           <Route path="daily" element={<DailyPage />} />
           <Route path="store" element={<StorePage />} />
+          <Route path="api-test" element={<ApiTest />} />
         </Route>
         <Route path="*" element={<NotFound />} />
       </Routes>
