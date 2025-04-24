@@ -1,10 +1,24 @@
 import React from "react";
 import Header from "./Header";
+import { useAuth } from "@/contexts/AuthContext";
 import Footer from "./Footer";
+import Loading from "../ui/Loading";
+
+import LoginPage from "@/pages/LoginPage";
 
 import { Outlet } from "react-router-dom";
 
 const AppLayout: React.FC = () => {
+  const { user, isLoading } = useAuth();
+
+  if (isLoading) {
+    return <Loading message="Loading EpicTasks..." />;
+  }
+
+  if (!user) {
+    return <LoginPage />;
+  }
+
     return (
       <div className="flex flex-col bg-gradient-to-br from-background to-background/70 min-h-screen">
         <Header />

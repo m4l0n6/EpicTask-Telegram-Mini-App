@@ -1,154 +1,309 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { Task } from "@/types";
-import {
-  getTasks,
-  updateTask as updateTaskInStorage,
-  deleteTask as deleteTaskInStorage,
-} from "@/utils/storage";
-import { v4 as uuidv4 } from "uuid";
-// import { addXP } from "@/utils/gamification";
 
-type TaskContextType = {
+import { useAuth } from "./AuthContext";
+
+
+import { taskApi } from "@/services/api";
+import { toast } from "@/hooks/use-toast";
+
+interface TaskContextType {
   tasks: Task[];
   isLoading: boolean;
-  addTask: (task: Omit<Task, "id" | "completed" | "createdAt">) => void;
-  updateTask: (id: string, updates: Partial<Task>) => void;
-  toggleComplete: (id: string) => void;
-  // markTaskComplete: (taskId: string) => void;
-  deleteTask: (id: string) => void;
-};
+  addTask: (
+    taskData: Omit<
+      Task,
+      | "id"
+      | "completed"
+      | "createdAt"
+      | "completedAt"
+      | "userId"
+      | "tokenReward"
+    >
+  ) => void;
+  updateTask: (taskId: string, taskData: Partial<Task>) => void;
+  deleteTask: (taskId: string) => void;
+  markTaskComplete: (taskId: string) => void;
+  getTodayTasksCount: () => number;
+  getCompletedTasksCount: () => number;
+}
 
 const TaskContext = createContext<TaskContextType | undefined>(undefined);
 
 export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-    const [tasks, setTasks] = useState<Task[]>([]);
-    const [isLoading, setIsLoading] = useState(true);
+  const [tasks, setTasks] = useState<Task[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const { user } = useAuth();
 
-    useEffect(() => {
-      // Tải danh sách nhiệm vụ khi component được mount
-      const loadTasks = async () => {
-        try {
-          const storedTasks = getTasks();
-          setTasks(storedTasks);
-        } catch (error) {
-          console.error("Error loading tasks:", error);
-        } finally {
-          setIsLoading(false);
-        }
-      };
-
+  useEffect(() => {
+    if (user) {
       loadTasks();
-    }, []);
+    }
+  }, [user]);
 
-    const addTask = (
-      taskData: Omit<Task, "id" | "completed" | "createdAt">
-    ) => {
-      const newTask: Task = {
-        id: uuidv4(),
+  const loadTasks = async () => {
+    setIsLoading(true);
+    try {
+      const loadedTasks = await taskApi.getTasks();
+      setTasks(loadedTasks);
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to load your tasks.",
+        variant: "destructive",
+      });
+      console.error("Error loading tasks:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const addTask = async (
+    taskData: Omit<
+      Task,
+      | "id"
+      | "completed"
+      | "createdAt"
+      | "completedAt"
+      | "userId"
+      | "tokenReward"
+    >
+  ) => {
+    if (!user) {
+      toast({
+        title: "Error",
+        description: "You must be logged in to add tasks.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Check if user has reached the daily limit (10 tasks)
+    if (getTodayTasksCount() >= 10) {
+      toast({
+        title: "Daily Limit Reached",
+        description:
+          "You can only create 10 tasks per day to prevent cheating.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      // Calculate token reward based on XP (default to 20% of XP)
+      const xpReward = Math.min(taskData.xpReward, 100); // Cap XP reward at 100
+
+      const newTask = await taskApi.createTask({
         title: taskData.title,
-        description: taskData.description || "",
-        deadline: taskData.deadline || null,
-        completed: false,
-        createdAt: new Date().toISOString(),
-        xpReward: taskData.xpReward || 10,
-        tokenReward:
-          taskData.tokenReward || Math.ceil((taskData.xpReward || 10) / 5),
-      };
+        description: taskData.description,
+        deadline: taskData.deadline || "",
+        xpReward: xpReward,
+      });
 
       setTasks((prevTasks) => [...prevTasks, newTask]);
-      setTasks([...tasks, newTask]);;
-    };
 
-    const updateTask = (id: string, updates: Partial<Task>) => {
+      toast({
+        title: "Task Added",
+        description: `"${newTask.title}" has been added to your tasks.`,
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to add the task.",
+        variant: "destructive",
+      });
+      console.error("Error adding task:", error);
+    }
+  };
+
+  const updateTask = async (taskId: string, taskData: Partial<Task>) => {
+    try {
+      const taskIndex = tasks.findIndex((task) => task._id === taskId);
+
+      if (taskIndex === -1) {
+        toast({
+          title: "Error",
+          description: "Task not found.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Prevent updating completed tasks
+      if (tasks[taskIndex].completed) {
+        toast({
+          title: "Cannot Update",
+          description: "Completed tasks cannot be updated.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      const updatedTask = await taskApi.updateTask(taskId, {
+        title: taskData.title,
+        description: taskData.description,
+        deadline: taskData.deadline || "",
+      });
+
       setTasks((prevTasks) =>
-        prevTasks.map((task) =>
-          task.id === id ? { ...task, ...updates } : task
+        prevTasks.map((task) => (task._id === taskId ? updatedTask : task))
+      );
+
+      toast({
+        title: "Task Updated",
+        description: `"${updatedTask.title}" has been updated.`,
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to update the task.",
+        variant: "destructive",
+      });
+      console.error("Error updating task:", error);
+    }
+  };
+
+  const getTodayTasksCount = () => {
+    if (!user) return 0;
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    return tasks.filter((task) => {
+      const taskDate = new Date(task.createdAt);
+      return taskDate >= today && task.userId === user._id;
+    }).length;
+  };
+
+  const getCompletedTasksCount = () => {
+    if (!user) return 0;
+
+    return tasks.filter((task) => task.completed && task.userId === user._id)
+      .length;
+  };
+
+  const deleteTask = async (taskId: string) => {
+    try {
+      const taskToDelete = tasks.find((task) => task._id === taskId);
+
+      if (!taskToDelete) {
+        toast({
+          title: "Error",
+          description: "Task not found.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Prevent deleting completed tasks
+      if (taskToDelete.completed) {
+        toast({
+          title: "Cannot Delete",
+          description: "Completed tasks cannot be deleted.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      await taskApi.deleteTask(taskId);
+      setTasks((prevTasks) => prevTasks.filter((task) => task._id !== taskId));
+
+      toast({
+        title: "Task Deleted",
+        description: `"${taskToDelete.title}" has been deleted.`,
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to delete the task.",
+        variant: "destructive",
+      });
+      console.error("Error deleting task:", error);
+    }
+  };
+
+  // Thông báo hoàn thành nhiệm vụ
+  const markTaskComplete = async (taskId: string) => {
+    try {
+      // Trước khi gọi API, kiểm tra xem ID có hợp lệ không
+      if (!taskId) {
+        toast({
+          title: "Error",
+          description: "Invalid task ID.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Tìm task trong state để lấy _id nếu tồn tại
+      const taskToComplete = tasks.find((task) => task._id === taskId);
+      if (!taskToComplete) {
+        toast({
+          title: "Error",
+          description: "Task not found.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Sử dụng _id thay vì id nếu cần
+      const taskDbId = taskToComplete._id || taskId;
+
+      const response = await taskApi.completeTask(taskDbId);
+
+      const { xpGained, tokenGained, leveledUp } = response;
+
+      // Update local task state
+      setTasks((prevTasks) =>
+        prevTasks.map((t) =>
+          t._id === taskId
+            ? {
+                ...t,
+                completed: true,
+                completedAt: new Date().toISOString(),
+              }
+            : t
         )
       );
 
-      const task = tasks.find((t) => t.id === id);
-      if (task) {
-        const updatedTask = { ...task, ...updates };
-        updateTaskInStorage(updatedTask);
-      }
-    };
+      // Show toast with animation
+      toast({
+        title: "Task completed!",
+        description: `You earned ${xpGained} XP and ${tokenGained} tokens${
+          leveledUp ? " and leveled up!" : "!"
+        }`,
+        variant: "default",
+      });
 
-    // Thông báo hoàn thành nhiệm vụ
-    // const markTaskComplete = (taskId: string) => {
-    //   try {
-    //     const { task, xpGained, tokenGained, leveledUp } = completeTask(taskId);
+      // Force reload tasks to ensure sync with storage
+      loadTasks();
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : "Could not complete the task.";
+      toast({
+        title: "Error",
+        description: errorMessage,
+        variant: "destructive",
+      });
+    }
+  };
 
-    //     // Update local task state
-    //     setTasks((prevTasks) =>
-    //       prevTasks.map((t) =>
-    //         t.id === taskId
-    //           ? { ...t, completed: true, completedAt: new Date().toISOString() }
-    //           : t
-    //       )
-    //     );
-
-    //     // Show toast with animation
-    //     toast({
-    //       title: "Task Completed!",
-    //       description: `You earned ${xpGained} XP and ${tokenGained} tokens${
-    //         leveledUp ? " and leveled up!" : "!"
-    //       }`,
-    //       variant: "default",
-    //     });
-
-    //     // Force reload tasks to ensure sync with storage
-    //     loadTasks();
-    //   } catch (error) {
-    //     const errorMessage =
-    //       error instanceof Error
-    //         ? error.message
-    //         : "Failed to complete the task.";
-    //     toast({
-    //       title: "Error",
-    //       description: errorMessage,
-    //       variant: "destructive",
-    //     });
-    //   }
-    // };
-
-    const toggleComplete = (id: string) => {
-      const task = tasks.find((t) => t.id === id);
-      if (!task) return;
-
-      const wasCompleted = task.completed;
-      const updatedTask = { ...task, completed: !wasCompleted };
-
-      setTasks((prevTasks) =>
-        prevTasks.map((t) => (t.id === id ? updatedTask : t))
-      );
-
-      updateTaskInStorage(updatedTask);
-
-      // Nếu đánh dấu hoàn thành (chưa hoàn thành trước đó), thì thêm XP
-      if (!wasCompleted && updatedTask.completed) {
-        // addXP(updatedTask.xpReward || 0);
-        // Thêm token cũng có thể được thực hiện ở đây
-      }
-    };
-
-    const deleteTask = (id: string) => {
-      setTasks((prevTasks) => prevTasks.filter((task) => task.id !== id));
-      deleteTaskInStorage(id);
-    };
-
-    const value = {
-      tasks,
-      isLoading,
-      addTask,
-      updateTask,
-      // markTaskComplete,
-      toggleComplete,
-      deleteTask,
-    };
-
-    return (
-      <TaskContext.Provider value={value}>{children}</TaskContext.Provider>
-    );
+  return (
+    <TaskContext.Provider
+      value={{
+        tasks,
+        isLoading,
+        addTask,
+        updateTask,
+        deleteTask,
+        markTaskComplete,
+        getTodayTasksCount,
+        getCompletedTasksCount,
+      }}
+    >
+      {children}
+    </TaskContext.Provider>
+  );
 }
 
 export const useTask = (): TaskContextType => {

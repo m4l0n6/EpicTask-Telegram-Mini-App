@@ -1,9 +1,13 @@
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import React from "react";
+import { useAuth } from "@/contexts/AuthContext";
 import { Bell, Calendar } from "lucide-react";
 import { Link } from "react-router-dom";
 
 const Header: React.FC = () => {
+  const { user } = useAuth();
+
+  if (!user) return null;
   return (
     <header className="top-0 z-10 sticky bg-background/80 shadow-sm backdrop-blur-sm">
       <div className="mx-auto px-4 py-3 container">
@@ -13,16 +17,15 @@ const Header: React.FC = () => {
             <span className="bg-clip-text bg-gradient-to-r from-epic-purple to-epic-blue font-bold text-2xl">
               EpicTasks
             </span>
-          </Link> 
+          </Link>
 
           <div className="flex items-center space-x-3">
             <div className="flex items-center">
-              <Link to='/store' className="flex items-center bg-epic-yellow/10 hover:bg-epic-yellow/20 px-3 py-1 border-epic-yellow/30 rounded-full">
-                <img
-                  src="../token.png"
-                  alt=""
-                  className="mr-2 w-8 h-8"
-                />
+              <Link
+                to="/store"
+                className="flex items-center bg-epic-yellow/10 hover:bg-epic-yellow/20 px-3 py-1 border-epic-yellow/30 rounded-full"
+              >
+                <img src="../token.png" alt="" className="mr-2 w-8 h-8" />
                 <span className="font-medium text-stone-950">100</span>
               </Link>
             </div>
@@ -45,8 +48,8 @@ const Header: React.FC = () => {
               <div className="flex items-center space-x-2">
                 <Avatar className="w-8 h-8">
                   <AvatarImage
-                    src="https://placehold.co/20x20"
-                    alt="User Avatar"
+                    src={user.avatar}
+                    alt="User Avatar" 
                   />
                   <AvatarFallback className="bg-epic-blue rounded-full text-white">
                     <span className="text-sm">U</span>
@@ -54,9 +57,11 @@ const Header: React.FC = () => {
                 </Avatar>
                 <div className="hidden md:flex flex-col">
                   <span className="font-medium text-gray-800 text-sm">
-                    Username
+                    {user.username}
                   </span>
-                  <span className="text-gray-500 text-xs">XP: 1000</span>
+                  <span className="text-gray-500 text-xs">
+                    Level {user.level}
+                  </span>
                 </div>
               </div>
             </Link>

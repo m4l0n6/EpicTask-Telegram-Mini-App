@@ -143,7 +143,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
 
       toast({
         title: "Login Successful",
-        description: `Welcome back, ${user?.username}!`,
+        description: `Welcome back, ${user?.first_name}!`,
       });
     } catch (err) {
       const errorMessage =

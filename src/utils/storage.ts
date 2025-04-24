@@ -17,7 +17,7 @@ export const saveUser = (user: User): void => {
 
     //Cập nhật người dùng này vào danh sách người dùng cho bảng xếp hạng
     const users = getUsers();
-    const existingUserIndex = users.findIndex(u => u.id === user.id); // Tìm chỉ số của người dùng hiện tại trong danh sách người dùng
+    const existingUserIndex = users.findIndex(u => u._id === user._id); // Tìm chỉ số của người dùng hiện tại trong danh sách người dùng
     if (existingUserIndex >= 0) {
         users[existingUserIndex] = user; // Cập nhật thông tin người dùng
     }
@@ -60,7 +60,7 @@ export const addTask = (task: Task): void => {
 // Cập nhật nhiệm vụ
 export const updateTask = (updateTask: Task): void => {
     const tasks = getTasks();
-    const index = tasks.findIndex(task => task.id === updateTask.id);
+    const index = tasks.findIndex(task => task._id === updateTask._id);
     if (index !== 1){
         tasks[index] = updateTask;
         saveTasks(tasks)
@@ -70,7 +70,7 @@ export const updateTask = (updateTask: Task): void => {
 // Xóa nhiệm vụ
 export const deleteTask = (taskId: string): void => {
   const tasks = getTasks();
-  const filteredTasks = tasks.filter((task) => task.id !== taskId);
+  const filteredTasks = tasks.filter((task) => task._id !== taskId);
   saveTasks(filteredTasks);
 };
 

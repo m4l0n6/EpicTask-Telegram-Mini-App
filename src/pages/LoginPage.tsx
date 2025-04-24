@@ -49,7 +49,7 @@ const LoginPage: React.FC = () => {
 
         <CardFooter>
           <Button
-            className="bg-gradient-to-r from-epic-purple to-epic-blue hover:opacity-90 w-full transition-opacity"
+            className="bg-gradient-to-r from-epic-purple to-epic-blue hover:opacity-90 w-full transition-opacity cursor-pointer"
             onClick={login}
             disabled={isLoading}
           >

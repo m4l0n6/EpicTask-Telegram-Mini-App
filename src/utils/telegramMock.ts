@@ -17,9 +17,9 @@ export const mockTelegramWebApp = {
     query_id: "mock_query_id",
     user: {
       id: 12345678,
-      first_name: "Epic",
-      last_name: "User",
-      username: "epicuser",
+      first_name: "Long",
+      last_name: "Ma",
+      username: "malong",
       language_code: "en",
       photo_url: "https://i.pravatar.cc/100?u=epicuser"
     },
@@ -67,11 +67,11 @@ export const mockTelegramLogin = async (): Promise<User> => {
 
   const telegramUser = mockTelegramWebApp.initDataUnsafe.user;
   const newUser: User = {
-    id: telegramUser.id.toString(),
+    _id: telegramUser.id.toString(),
     username:
       telegramUser.username ||
       `${telegramUser.first_name}${telegramUser.last_name || ""}`,
-    avatarUrl:
+    avatar:
       telegramUser.photo_url || `https://i.pravatar.cc/150?u=${uuidv4()}`,
     xp: 0,
     level: 1,
@@ -92,9 +92,9 @@ export const mockTelegramLogin = async (): Promise<User> => {
 export const createMockUsers = () => {
   const mockUsers: User[] = [
     {
-      id: "user1",
+      _id: "user1",
       username: "alice99",
-      avatarUrl: `https://i.pravatar.cc/150?u=user1`,
+      avatar: `https://i.pravatar.cc/150?u=user1`,
       xp: 850,
       level: 9,
       badges: [],
@@ -108,9 +108,9 @@ export const createMockUsers = () => {
       lastLoginAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
     },
     {
-      id: "user2",
+      _id: "user2",
       username: "bob_smith",
-      avatarUrl: `https://i.pravatar.cc/150?u=user2`,
+      avatar: `https://i.pravatar.cc/150?u=user2`,
       xp: 1200,
       level: 13,
       badges: [],
@@ -124,9 +124,9 @@ export const createMockUsers = () => {
       lastLoginAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
     },
     {
-      id: "user3",
+      _id: "user3",
       username: "gamer_master",
-      avatarUrl: `https://i.pravatar.cc/150?u=user3`,
+      avatar: `https://i.pravatar.cc/150?u=user3`,
       xp: 1560,
       level: 16,
       badges: [],
@@ -140,9 +140,9 @@ export const createMockUsers = () => {
       lastLoginAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
     },
     {
-      id: "user4",
+      _id: "user4",
       username: "productivity_queen",
-      avatarUrl: `https://i.pravatar.cc/150?u=user4`,
+      avatar: `https://i.pravatar.cc/150?u=user4`,
       xp: 2100,
       level: 22,
       badges: [],
@@ -156,9 +156,9 @@ export const createMockUsers = () => {
       lastLoginAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
     },
     {
-      id: "user5",
+      _id: "user5",
       username: "task_champion",
-      avatarUrl: `https://i.pravatar.cc/150?u=user5`,
+      avatar: `https://i.pravatar.cc/150?u=user5`,
       xp: 400,
       level: 5,
       badges: [],

@@ -1,6 +1,6 @@
 // Kiểu dữ liệu của người dùng
 export interface Task {
-  id: string;
+  _id?: string;
   title: string;
   description: string;
   deadline: string | null; // ISO format string or null
@@ -8,6 +8,7 @@ export interface Task {
   createdAt: string; // ISO format string
   xpReward: number;
   tokenReward: number;
+  userId: string;
 }
 
 // Thêm các interface khác cho ứng dụng của bạn nếu cần
@@ -18,14 +19,17 @@ export interface User {
   avatar?: string;
   first_name?: string;
   last_name?: string;
-  tokens?: number;
-  xp?: number;
-  level?: number;
+  tokens: number;
+  xp: number;
+  level: number;
+  badges: Badge[];
+  completedTasks: number;
   lastDailyLogin?: string | null;
   dailyLoginStreak?: number;
   lastTaskRefresh?: string | null;
-  createdAt?: string;
+  createdAt: string;
   updatedAt?: string;
+  lastLoginAt: string;
 }
 
 // Kiểu dữ liệu của huy hiệu
@@ -64,9 +68,12 @@ export interface DailyTask {
   description: string;
   tokenReward: number;
   completed: boolean;
-  type: 'login' | 'complete_task' | 'reach_streak';
+  type: "login" | "complete_task" | "reach_streak";
+  requirement: number;
+  progress: number;
   createdAt: string;
-  updatedAt: string | null;
+  completedAt: string | null;
+  expiresAt: string;
 }
 
 

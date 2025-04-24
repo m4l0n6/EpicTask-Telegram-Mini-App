@@ -107,7 +107,7 @@ const TaskList: React.FC = () => {
                 tokenReward: Math.ceil((values.xpReward || 10) / 5) // Phần thưởng token mặc định là 1/5 của XP
             }
 
-            updateTask(editingTask.id, taskData);
+            updateTask(editingTask._id || '', taskData);
             setShowEditDialog(false);
         }
     }
@@ -190,7 +190,7 @@ const TaskList: React.FC = () => {
                 <div className="gap-4 grid grid-cols-1 md:grid-cols-2">
                   {sortedTasks.map((task) => (
                     <TaskCard
-                      key={task.id}
+                      key={task._id}
                       task={task}
                       onEdit={() => handleEditTask(task)}
                     />
@@ -211,7 +211,7 @@ const TaskList: React.FC = () => {
                 <div className="gap-4 grid grid-cols-1 md:grid-cols-2">
                   {sortedTasks.map((task) => (
                     <TaskCard
-                      key={task.id}
+                      key={task._id}
                       task={task}
                       onEdit={() => handleEditTask(task)}
                     />
@@ -231,7 +231,7 @@ const TaskList: React.FC = () => {
                 <div className="gap-4 grid grid-cols-1 md:grid-cols-2">
                   {sortedTasks.map((task) => (
                     <TaskCard
-                      key={task.id}
+                      key={task._id}
                       task={task}
                       onEdit={() => handleEditTask(task)}
                     />
