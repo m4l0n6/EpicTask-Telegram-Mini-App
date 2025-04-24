@@ -10,9 +10,11 @@ const { bootstrap } = require('./config/bootstrap');
 connectDB();  
 
 const app = express();
-app.use(cors());
+app.use(cors({
+  origin: ['https://task-quest-gamify.lovable.app', 'http://localhost:5173'],
+  credentials: true // Đảm bảo gửi cookies nếu cần
+}));
 app.use(express.json());
-
 
 app.use((err, req, res, next) => {
   console.error("💥 Lỗi Server (middleware sớm):", err.stack || err);

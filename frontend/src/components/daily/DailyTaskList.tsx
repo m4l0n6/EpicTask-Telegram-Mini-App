@@ -20,10 +20,10 @@ const DailyTaskList: React.FC = () => {
   if (dailyTasks.length === 0) {
     return (
       <Card className="border-2 border-dashed">
-        <CardContent className="flex flex-col items-center justify-center py-10">
-          <p className="text-muted-foreground mb-4">No active daily tasks</p>
+        <CardContent className="flex flex-col justify-center items-center py-10">
+          <p className="mb-4 text-muted-foreground">No active daily tasks</p>
           <Button onClick={refreshTasks} variant="outline" className="flex items-center">
-            <RefreshCcw className="h-4 w-4 mr-2" />
+            <RefreshCcw className="mr-2 w-4 h-4" />
             Refresh Tasks
           </Button>
         </CardContent>
@@ -41,13 +41,13 @@ const DailyTaskList: React.FC = () => {
     <div className="space-y-4">
       <div className="flex justify-end">
         <Button onClick={refreshTasks} variant="outline" size="sm" className="flex items-center">
-          <RefreshCcw className="h-3 w-3 mr-1" />
+          <RefreshCcw className="mr-1 w-3 h-3" />
           Refresh
         </Button>
       </div>
       
       {sortedTasks.map(task => (
-        <DailyTaskCard key={task.id} task={task} />
+        <DailyTaskCard key={task._id} task={task} />
       ))}
     </div>
   );

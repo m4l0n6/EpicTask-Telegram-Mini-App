@@ -3,7 +3,7 @@ import axios from 'axios';
 // Lấy URL API từ biến môi trường hoặc mặc định
 const API_BASE_URL = import.meta.env.VITE_API_URL;
 
-console.log('Using API URL:', API_BASE_URL); // Debug để xác nhận URL đang sử dụng
+console.log('Using API URL:', API_BASE_URL); 
 
 const api = axios.create({
   baseURL: API_BASE_URL,
@@ -58,26 +58,27 @@ export const taskApi = {
 
   // Cập nhật task hiện có
   updateTask: async (
-    taskId: string,
+    _id: string,
     taskData: {
       title?: string;
       description?: string;
       deadline?: string;
     }
   ) => {
-    const response = await api.patch(`/tasks/${taskId}`, taskData);
+    const response = await api.patch(`/tasks/${_id}`, taskData);
     return response.data;
   },
 
   // Xóa task
-  deleteTask: async (taskId: string) => {
-    const response = await api.delete(`/tasks/${taskId}`);
+  deleteTask: async (_id: string) => {
+    const response = await api.delete(`/tasks/${_id}`);
     return response.data;
   },
 
   // Hoàn thành task
-  completeTask: async (taskId: string) => {
-    const response = await api.post(`/tasks/${taskId}/complete`);
+  completeTask: async (_id: string) => {
+    console.log('Task completed:', _id); // Log thông tin task đã hoàn thành   
+    const response = await api.post(`/tasks/${_id}/complete`);
     return response.data;
   },
 };
@@ -101,6 +102,7 @@ export const userApi = {
   // Lấy thông tin người dùng hiện tại
   getProfile: async () => {
     const response = await api.get('/users/me');
+    console.log('User Profile:', response.data); // Log thông tin người dùng
     return response.data;
   },
 };

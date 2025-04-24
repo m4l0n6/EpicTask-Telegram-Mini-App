@@ -36,16 +36,16 @@ interface TaskCardProps {
 }
 
 const TaskCard: React.FC<TaskCardProps> = ({ task, onEdit }) => {
-    const { deleteTask } = useTask();
+    const { deleteTask, markTaskComplete } = useTask();
 
     // Đánh dấu tác vụ là đã hoàn thành
     const handleComplete = () => {
-      alert("Task completed!");
+      markTaskComplete(task._id || '');
     };
 
     // Xóa tác vụ
     const handleDelete = () => {
-      deleteTask(task.id);
+      deleteTask(task._id || '');
     };
 
     // Định dạng ngày hết hạn để hiển thị

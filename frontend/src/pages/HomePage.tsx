@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { Star } from "lucide-react";
 import { Badge } from "../components/ui/badge";
 import { useTask } from "@/contexts/TaskContext";
+import { useAuth } from "@/contexts/AuthContext";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "../components/ui/card";
 import { Progress } from "../components/ui/progress";
 import { Button } from "../components/ui/button";
@@ -24,6 +25,7 @@ const HomePage: React.FC = () => {
   const [newLevel, setNewLevel] = useState(1);
 
   const { tasks, addTask } = useTask();
+  const { user } = useAuth();
 
   const recentTasks = tasks
     .filter((task) => !task.completed)
@@ -61,6 +63,17 @@ const HomePage: React.FC = () => {
     setNewLevel(2);
     setShowLevelUp(true);
   };
+
+  const getLevelDisplayClass = () => {
+    if (!user) return "bg-gradient-to-r from-epic-yellow to-amber-400";
+    if (user.level >= 30)
+      return "bg-gradient-to-r from-epic-purple to-epic-blue";
+    if (user.level >= 20)
+      return "bg-gradient-to-r from-epic-blue to-epic-green";
+    if (user.level >= 10)
+      return "bg-gradient-to-r from-epic-yellow to-epic-green";
+    return "bg-gradient-to-r from-epic-yellow to-amber-400";
+  };
     return (
       <div className="space-y-6">
         {/* Hiển thị tiến độ của người dùng */}
@@ -69,14 +82,14 @@ const HomePage: React.FC = () => {
             <div className="flex items-center">
               <Sparkles className="mr-2 w-6 h-6 text-epic-yellow animate-pulse" />
               <CardTitle className="text-2xl">
-                Welcome back, Username!
+                Welcome back, {user?.username}!
               </CardTitle>
             </div>
             <CardDescription className="flex items-center">
               <div
-                className={`px-2 py-1 rounded-md text-white bg-gradient-to-r from-epic-yellow to-amber-400 mr-2 font-bold`}
+                className={`px-2 py-1 rounded-md text-white bg-gradient-to-r ${getLevelDisplayClass()} from-epic-yellow to-amber-400 mr-2 font-bold`}
               >
-                Level 100
+                Level {user?.level}
               </div>
               <span>Newbie</span>
               <span className="mx-2">•</span>
@@ -185,7 +198,7 @@ const HomePage: React.FC = () => {
 
                 return (
                   <Card
-                    key={task.id}
+                    key={task._id}
                     className={`task-card-hover border-2 ${borderClass} transform hover:translate-x-1 transition-all`}
                   >
                     <CardContent className="p-4">
