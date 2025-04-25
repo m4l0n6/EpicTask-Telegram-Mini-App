@@ -26,11 +26,6 @@ const userSchema = new Schema({
     default: 0,  
     min: 0,  
   },
-  tokens: {
-    type: Number,
-    default: 0,
-    min: 0,
-  },
 }, {
   timestamps: true,
  

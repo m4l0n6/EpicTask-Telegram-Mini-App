@@ -36,7 +36,6 @@ const telegramLoginOrRegister = async (req, res, next) => {
         telegramId: telegramId,
         username: userData.username,
         avatar: userData.photo_url,
-        tokens: 0, 
       });
       await user.save();
       isNewUser = true;
