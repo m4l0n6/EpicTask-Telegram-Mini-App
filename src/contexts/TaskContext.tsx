@@ -59,62 +59,66 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const addTask = async (
-    taskData: Omit<
-      Task,
-      | "id"
-      | "completed"
-      | "createdAt"
-      | "completedAt"
-      | "userId"
-      | "tokenReward"
-    >
-  ) => {
-    if (!user) {
-      toast({
-        title: "Error",
-        description: "You must be logged in to add tasks.",
-        variant: "destructive",
-      });
-      return;
-    }
+  taskData: Omit<
+    Task,
+    | "id"
+    | "completed"
+    | "createdAt"
+    | "completedAt"
+    | "userId"
+    | "tokenReward"
+  >
+) => {
+  if (!user) {
+    toast({
+      title: "Error",
+      description: "You must be logged in to add tasks.",
+      variant: "destructive",
+    });
+    return;
+  }
 
-    // Check if user has reached the daily limit (10 tasks)
-    if (getTodayTasksCount() >= 10) {
-      toast({
-        title: "Daily Limit Reached",
-        description:
-          "You can only create 10 tasks per day to prevent cheating.",
-        variant: "destructive",
-      });
-      return;
-    }
+  // Check if user has reached the daily limit (10 tasks)
+  if (getTodayTasksCount() >= 10) {
+    toast({
+      title: "Daily Limit Reached",
+      description: "You can only create 10 tasks per day to prevent cheating.",
+      variant: "destructive",
+    });
+    return;
+  }
 
-    try {
-      // Calculate token reward based on XP (default to 20% of XP)
-      const xpReward = Math.min(taskData.xpReward, 100); // Cap XP reward at 100
+  try {
+    // Calculate token reward based on XP (default to 20% of XP)
+    const xpReward = Math.min(taskData.xpReward, 100); // Cap XP reward at 100
 
-      const newTask = await taskApi.createTask({
-        title: taskData.title,
-        description: taskData.description,
-        deadline: taskData.deadline || "",
-        xpReward: xpReward,
-      });
+    // Gọi API để tạo task mới
+    const newTask = await taskApi.createTask({
+      title: taskData.title,
+      description: taskData.description,
+      deadline: taskData.deadline || "",
+      xpReward: xpReward,
+    });
 
-      setTasks((prevTasks) => [...prevTasks, newTask]);
+    // Cập nhật state với kết quả từ API
+    setTasks((prevTasks) => [...prevTasks, newTask]);
 
-      toast({
-        title: "Task Added",
-        description: `"${newTask.title}" has been added to your tasks.`,
-      });
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to add the task.",
-        variant: "destructive",
-      });
-      console.error("Error adding task:", error);
-    }
-  };
+    toast({
+      title: "Task Added",
+      description: `"${newTask.title}" has been added to your tasks.`,
+    });
+    
+    return newTask; // Trả về task mới được tạo
+  } catch (error) {
+    toast({
+      title: "Error",
+      description: "Failed to add the task.",
+      variant: "destructive",
+    });
+    console.error("Error adding task:", error);
+    throw error; // Chuyển tiếp lỗi để xử lý ở component
+  }
+};
 
   const updateTask = async (taskId: string, taskData: Partial<Task>) => {
     try {
@@ -164,16 +168,25 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const getTodayTasksCount = () => {
-    if (!user) return 0;
+  if (!user) return 0;
 
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  
+  // Lọc các nhiệm vụ của ngày hôm nay
+  const todayTasks = tasks.filter((task) => {
+    const taskDate = new Date(task.createdAt);
+    
+    // Sử dụng trường owner thay vì userId
+    return taskDate >= today && task.owner === user._id;
+  });
 
-    return tasks.filter((task) => {
-      const taskDate = new Date(task.createdAt);
-      return taskDate >= today && task.userId === user._id;
-    }).length;
-  };
+  console.log("Today's tasks filtered:", todayTasks);
+  console.log("Today's tasks count:", todayTasks.length);
+
+  return todayTasks.length;
+};
+
 
   const getCompletedTasksCount = () => {
     if (!user) return 0;

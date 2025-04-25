@@ -101,8 +101,23 @@ export const authApi = {
 export const userApi = {
   // Lấy thông tin người dùng hiện tại
   getProfile: async () => {
-    const response = await api.get('/users/me');
-    console.log('User Profile:', response.data); // Log thông tin người dùng
+    const response = await api.get("/users/me");
+    console.log("User Profile:", response.data); // Log thông tin người dùng
+    return response.data;
+  },
+
+  addXp: async (amount: number) => {
+    const response = await api.post("/users/xp", { amount });
+    return response.data;
+  },
+
+  addTokens: async (amount: number) => {
+    const response = await api.post("/users/tokens", { amount });
+    return response.data;
+  },
+
+  addNotification: async (notification: Notification) => {
+    const response = await api.post("/users/notifications", notification);
     return response.data;
   },
 };

@@ -20,7 +20,7 @@ export const mockTelegramWebApp = {
       first_name: "Long",
       last_name: "Ma",
       username: "malong",
-      language_code: "en",
+      language_code: "vn",
       photo_url: "https://i.pravatar.cc/100?u=epicuser"
     },
     auth_date: new Date().getTime() / 1000,

@@ -1,14 +1,23 @@
 import React from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useAuth } from "@/contexts/AuthContext";
+import { useTask } from "@/contexts/TaskContext";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { formatDistance } from "date-fns";
 import { Progress } from "@/components/ui/progress";
 import { Award, CheckCircle2, Star, Trophy } from "lucide-react";
+import { calculateXpProgress, xpForNextLevel } from "@/utils/gamification";
 
 const ProfileCard: React.FC = () => {
   const { user, logout } = useAuth();
+  const { getCompletedTasksCount } = useTask();
+
+  const completedTasks = getCompletedTasksCount();
+  const xpProgress = user ? calculateXpProgress(user) : 0;
+  const xpForNext = user ? xpForNextLevel(user.level) : 0;
+  const currentLevelXp = xpForNext - 100;
+  const xpInCurrentLevel = user ? user.xp - currentLevelXp : 0;
 
   if (!user) return null;
 
@@ -36,13 +45,13 @@ const ProfileCard: React.FC = () => {
           <div className="flex justify-between items-center">
             <span className="font-medium text-sm">Level {user.level}</span>
             <span className="text-muted-foreground text-sm">
-              100 / {100} XP to Level 100
+              {xpInCurrentLevel} / {100} XP to Level 100
             </span>
           </div>
-          <Progress value={100} className="h-2" />
+          <Progress value={xpProgress} className="h-2" />
           <div className="flex justify-between text-muted-foreground text-xs">
             <span>Total: {user.xp} XP</span>
-            <span>Next: 100 XP</span>
+            <span>Next: {xpForNext} XP</span>
           </div>
         </div>
 
@@ -56,7 +65,7 @@ const ProfileCard: React.FC = () => {
 
           <div className="flex flex-col items-center bg-muted/30 p-3 rounded-lg">
             <CheckCircle2 className="mb-1 w-6 h-6 text-epic-green" />
-            <span className="font-bold text-xl">100</span>
+            <span className="font-bold text-xl">{completedTasks}</span>
             <span className="text-muted-foreground text-xs">Tasks</span>
           </div>
 
@@ -71,7 +80,7 @@ const ProfileCard: React.FC = () => {
         <div className="flex justify-center items-center bg-gradient-to-r from-epic-purple/10 to-epic-blue/10 p-4 rounded-lg">
           <Star className="fill-epic-yellow mr-3 w-8 h-8 text-epic-yellow" />
           <div>
-            <div className="font-bold text-2xl">1000 XP</div>
+            <div className="font-bold text-2xl">{user.xp} XP</div>
             <div className="text-muted-foreground text-sm">
               Total Experience
             </div>
