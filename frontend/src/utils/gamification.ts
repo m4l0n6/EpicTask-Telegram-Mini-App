@@ -1,4 +1,10 @@
-import { User, Task, Badge, Notification, DailyTask } from "@/types";
+import {
+  User,
+  Task,
+  Badge,
+  Notification as AppNotification,
+  DailyTask,
+} from "@/types";
 import { v4 as uuidv4 } from "uuid";
 import {
   getUser,
@@ -6,26 +12,27 @@ import {
   addNotification,
   unlockBadge,
   getBadges,
-  getTasks,
   saveDailyTasks,
   getDailyTasks,
 } from "./storage";
+import { userApi } from "@/services/api";
+import { taskApi } from "@/services/api";
 import { addDays, isSameDay, startOfDay } from "date-fns";
 
-// đinh nghĩa các hằng số cho XP và cấp độ
+// Đinh nghĩa các hằng số cho XP và cấp độ
 export const XP_PER_LEVEL = 100;
 export const MAX_LEVEL = 50;
 
-// Token rewards
+// Định nghĩa các hằng số cho phần thưởng
 export const LOGIN_TOKEN_REWARD = 5;
-export const STREAK_BONUS_MULTIPLIER = 0.2; // 20% bonus per day in streak
+export const STREAK_BONUS_MULTIPLIER = 0.2; // Phần thưởng cho mỗi ngày liên tiếp đăng nhập
 
-// Calculate level based on XP
+// Tính toán cấp độ
 export const calculateLevel = (xp: number): number => {
   return Math.min(Math.floor(xp / XP_PER_LEVEL) + 1, MAX_LEVEL);
 };
 
-// Calculate XP needed for next level
+// TÍnh toán cấp độ cần thiết
 export const xpForNextLevel = (level: number): number => {
   return level * XP_PER_LEVEL;
 };
@@ -40,117 +47,100 @@ export const calculateXpProgress = (user: User): number => {
   return Math.floor((xpInCurrentLevel / xpNeededForNextLevel) * 100);
 };
 
-// Add XP to user and handle level up
-export const addXpToUser = (
+// Tăng xp và xử lý tăng cấp cho người dùng
+export const addXpToUser = async (
   xpAmount: number
-): { user: User; leveledUp: boolean; newLevel?: number } => {
-  const user = getUser();
-  if (!user) {
-    throw new Error("User not found");
-  }
+): Promise<{ user: User; leveledUp: boolean; newLevel?: number }> => {
+  try {
+    // Thay vì lấy user từ local storage, lấy từ API
+    const user = await userApi.getProfile();
 
-  const oldLevel = user.level;
-  user.xp += xpAmount;
-  const newLevel = calculateLevel(user.xp);
-  user.level = newLevel;
+    const oldLevel = user.level;
+    // Gọi API để thêm XP
+    const updatedUser = await userApi.addXp(xpAmount);
+    const newLevel = updatedUser.level;
 
-  const leveledUp = newLevel > oldLevel;
+    const leveledUp = newLevel > oldLevel;
 
-  // If user leveled up, create notification
-  if (leveledUp) {
-    const notification: Notification = {
-      id: uuidv4(),
-      type: "levelUp",
-      message: `Congratulations! You've reached level ${newLevel}!`,
-      read: false,
-      createdAt: new Date().toISOString(),
+    // Nếu người dùng lên cấp sẽ nhận thông báo
+    if (leveledUp) {
+      // const notification: AppNotification = {
+      //   id: uuidv4(), // Có thể server sẽ tạo ID
+      //   type: "levelUp",
+      //   message: `Congratulations! You've reached level ${newLevel}!`,
+      //   read: false,
+      //   createdAt: new Date().toISOString(),
+      // };
+
+      // // Thay bằng API call để tạo thông báo
+      // await userApi.addNotification(notification as any);
+
+      // Check for badge unlocks based on level
+      await checkAndUnlockLevelBadges(newLevel);
+    }
+
+    return {
+      user: updatedUser,
+      leveledUp,
+      newLevel: leveledUp ? newLevel : undefined,
     };
-    addNotification(notification);
-
-    // Check for badge unlocks based on level
-    checkAndUnlockLevelBadges(newLevel);
+  } catch (error) {
+    console.error("Error adding XP to user:", error);
+    throw error;
   }
-
-  saveUser(user);
-
-  return { user, leveledUp, newLevel: leveledUp ? newLevel : undefined };
 };
 
-// Add tokens to user
-export const addTokensToUser = (
+// Tăng tokens cho người dùng
+export const addTokensToUser = async (
   tokenAmount: number
-): { user: User; newTokens: number } => {
-  const user = getUser();
-  if (!user) {
-    throw new Error("User not found");
+): Promise<{ user: User; newTokens: number }> => {
+  try {
+    // Gọi API để thêm tokens
+    const updatedUser = await userApi.addTokens(tokenAmount);
+
+    // // Tạo thông báo cho việc nhận token qua API
+    // const notification: AppNotification = {
+    //   id: uuidv4(),
+    //   type: "token",
+    //   message: `You've earned ${tokenAmount} tokens!`,
+    //   read: false,
+    //   createdAt: new Date().toISOString(),
+    // };
+
+    // await userApi.addNotification(notification as any);
+
+    return { user: updatedUser, newTokens: tokenAmount };
+  } catch (error) {
+    console.error("Error adding tokens to user:", error);
+    throw error;
   }
-
-  user.tokens += tokenAmount;
-
-  // Create notification for token gain
-  const notification: Notification = {
-    id: uuidv4(),
-    type: "token",
-    message: `You've earned ${tokenAmount} tokens!`,
-    read: false,
-    createdAt: new Date().toISOString(),
-  };
-  addNotification(notification);
-
-  saveUser(user);
-
-  return { user, newTokens: tokenAmount };
 };
 
-// Complete a task and award XP
-export const completeTask = (
+// Hoàn thành 1 nhiệm vụ và nhận XP
+export const completeTask = async (
   taskId: string
-): {
+): Promise<{
   task: Task;
   xpGained: number;
   tokenGained: number;
   leveledUp: boolean;
-} => {
-  const user = getUser();
-  if (!user) {
-    throw new Error("User not found");
+}> => {
+  try {
+    // Gọi API để hoàn thành nhiệm vụ
+    // API nên trả về tất cả thông tin cần thiết trong một request duy nhất
+    const response = await taskApi.completeTask(taskId);
+
+    // API trả về task đã cập nhật, số XP, token nhận được, và trạng thái lên cấp
+    const { task, xpGained, tokenGained, leveledUp } = response;
+
+    // Cập nhật tiến độ nhiệm vụ hàng ngày
+    await updateDailyTaskProgress("complete_task", 1);
+
+    return { task, xpGained, tokenGained, leveledUp };
+  } catch (error) {
+    console.error("Error completing task:", error);
+    throw error;
   }
-
-  const tasks = getTasks();
-  const taskIndex = tasks.findIndex((t) => t._id === taskId);
-
-  if (taskIndex === -1) {
-    throw new Error("Task not found");
-  }
-
-  if (tasks[taskIndex].completed) {
-    throw new Error("Task already completed");
-  }
-
-  // Mark task as completed
-  tasks[taskIndex].completed = true;
-  tasks[taskIndex].createdAt = new Date().toISOString();
-
-  // Update completed tasks count
-  user.completedTasks += 1;
-  saveUser(user);
-
-  // Award XP
-  const xpGained = tasks[taskIndex].xpReward;
-  const { leveledUp } = addXpToUser(xpGained);
-
-  // Award tokens
-  const tokenGained =
-    tasks[taskIndex].tokenReward || Math.ceil(tasks[taskIndex].xpReward / 5); // Default token is 1/5 of XP
-  addTokensToUser(tokenGained);
-
-  // Check for badges based on completed tasks
-  checkAndUnlockTaskBadges(user.completedTasks);
-
-  // Update daily tasks progress for "complete task" type
-  updateDailyTaskProgress("complete_task", 1);
-
-  return { task: tasks[taskIndex], xpGained, tokenGained, leveledUp };
 };
 
 // Check and unlock badges based on level
@@ -178,7 +168,7 @@ export const checkAndUnlockLevelBadges = (level: number): Badge[] => {
           unlockedBadges.push(unlockedBadge);
 
           // Create notification for badge unlock
-          const notification: Notification = {
+          const notification: AppNotification = {
             id: uuidv4(),
             type: "badge",
             message: `You've unlocked the "${unlockedBadge.name}" badge!`,
@@ -219,7 +209,7 @@ export const checkAndUnlockTaskBadges = (completedTasks: number): Badge[] => {
           unlockedBadges.push(unlockedBadge);
 
           // Create notification for badge unlock
-          const notification: Notification = {
+          const notification: AppNotification = {
             id: uuidv4(),
             type: "badge",
             message: `You've unlocked the "${unlockedBadge.name}" badge!`,
@@ -370,7 +360,7 @@ export const processDailyLogin = (): {
 
     // Create streak notification if streak is growing
     if (newStreak > 1) {
-      const notification: Notification = {
+      const notification: AppNotification = {
         id: uuidv4(),
         type: "streak",
         message: `You're on a ${newStreak} day login streak! Keep it up!`,

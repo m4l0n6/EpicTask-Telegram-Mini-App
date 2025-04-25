@@ -6,9 +6,11 @@ export interface Task {
   deadline: string | null; // ISO format string or null
   completed: boolean;
   createdAt: string; // ISO format string
+  updatedAt: string | null; // ISO format string or null
   xpReward: number;
   tokenReward: number;
   userId: string;
+  owner: string;
 }
 
 // Thêm các interface khác cho ứng dụng của bạn nếu cần
@@ -55,7 +57,7 @@ export interface Leaderboard {
 // Kiểu dữ liệu của thông báo
 export interface Notification {
   id: string;
-  type: 'deadline' | 'levelUp' | 'badge' | 'leaderboard' | 'token' | 'streak';
+  type: string;
   message: string;
   read: boolean;
   createdAt: string;
