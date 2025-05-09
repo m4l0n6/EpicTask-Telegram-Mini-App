@@ -9,38 +9,44 @@ const LEVEL_XP_THRESHOLD = 100;
 
  
 const awardXp = async (userId, xpToAdd) => {
-    console.log(`[GamificationService - Placeholder] Awarding ${xpToAdd} XP to ${userId}`);
-    if (!userId || xpToAdd <= 0) return { user: null, leveledUp: false, newBadges: [] };
+  try {
+    console.log(`[GamificationService] Awarding ${xpToAdd} XP to ${userId}`);
+    if (!userId || xpToAdd <= 0) return { user: null, leveledUp: false };
 
-    try {
-        const user = await User.findById(userId);
-        if (!user) throw new Error(`User not found: ${userId}`);
+    const user = await User.findById(userId);
+    if (!user) throw new Error(`User not found: ${userId}`);
 
-        const oldLevel = user.level;
-        const newXp = user.xp + xpToAdd;
-        const newLevel = Math.floor(newXp / LEVEL_XP_THRESHOLD) + 1;
-
-        user.xp = newXp;
-        user.level = newLevel;
-        await user.save();
-
-        const leveledUp = newLevel > oldLevel;
-
-       
-        await leaderboardService.updateScore(userId, newXp);
-
-       
-        const completedTasksCount = await Task.countDocuments({ owner: userId, completed: true });
-        const newBadges = await checkAndAwardBadges(userId, { level: newLevel, tasksCompleted: completedTasksCount });
-
-        console.log(`[GamificationService] User ${userId} updated. Leveled up: ${leveledUp}. New Badges: ${newBadges.length}`);
-        return { user, leveledUp, newBadges };
-
-    } catch (err) {
-        console.error(`[GamificationService] Error awarding XP to ${userId}:`, err);
-       
-        return { user: null, leveledUp: false, newBadges: [], error: err };
+    const oldXp = user.xp || 0;
+    const oldLevel = user.level || 1;
+    const newXp = oldXp + xpToAdd;
+    
+    // Tính toán level mới
+    const newLevel = Math.floor(newXp / 100) + 1;
+    
+    // Cập nhật thông tin người dùng
+    user.xp = newXp;
+    user.level = newLevel;
+    await user.save();
+    
+    const leveledUp = newLevel > oldLevel;
+    
+    // Kiểm tra và trao huy hiệu dựa trên các tiêu chí
+    if (leveledUp) {
+      await checkAndAwardBadges(userId, { level: newLevel });
     }
+    
+    // 2. Kiểm tra số nhiệm vụ đã hoàn thành
+    const completedTaskCount = await Task.countDocuments({ 
+      owner: userId, 
+      completed: true 
+    });
+    await checkAndAwardBadges(userId, { tasksCompleted: completedTaskCount });
+    
+    return { user, leveledUp };
+  } catch (err) {
+    console.error(`[GamificationService] Error awarding XP to ${userId}:`, err);
+    return { user: null, leveledUp: false };
+  }
 };
 
  
@@ -74,7 +80,31 @@ const checkAndAwardBadges = async (userId, criteria) => {
     }
 };
 
+// Thêm hàm này vào cuối file, trước module.exports
+const awardTokens = async (userId, tokensToAdd) => {
+  console.log(`[GamificationService] Awarding ${tokensToAdd} tokens to ${userId}`);
+  if (!userId || tokensToAdd <= 0) return null;
+
+  try {
+    const user = await User.findById(userId);
+    if (!user) throw new Error(`User not found: ${userId}`);
+
+    const oldTokens = user.tokens || 0;
+    const newTokens = oldTokens + tokensToAdd;
+
+    user.tokens = newTokens;
+    await user.save();
+
+    console.log(`[GamificationService] User ${userId} tokens updated: ${oldTokens} -> ${newTokens}`);
+    return user;
+  } catch (err) {
+    console.error(`[GamificationService] Error awarding tokens to ${userId}:`, err);
+    return null;
+  }
+};
+
 module.exports = {
   awardXp,
-  checkAndAwardBadges
+  checkAndAwardBadges,
+  awardTokens // Thêm export cho hàm mới
 };

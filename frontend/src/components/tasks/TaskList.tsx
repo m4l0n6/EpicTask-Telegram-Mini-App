@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { Task } from '@/types';
 import Loading from '../ui/Loading';
 import { useTask } from "@/contexts/TaskContext";
+import { useAuth } from "@/contexts/AuthContext";
 import TaskForm from "./TaskForm";
 import { Button } from "@/components/ui/button";
 import TaskCard from "./TaskCard";
@@ -25,6 +26,7 @@ import { Plus, ListFilter } from "lucide-react";
 
 const TaskList: React.FC = () => {
     const { tasks, isLoading, addTask, updateTask } = useTask();
+    const { user } = useAuth();
     const [editingTask, setEditingTask] = useState<Task | null>(null);
     const [showAddDialog, setShowAddDialog] = useState(false);
     const [showEditDialog, setShowEditDialog] = useState(false);
@@ -77,6 +79,8 @@ const TaskList: React.FC = () => {
         deadline: values.deadline ? values.deadline.toISOString() : null,
         xpReward: values.xpReward || 10,
         tokenReward: Math.ceil((values.xpReward || 10) / 5), // Phần thưởng token mặc định là 1/5 của XP
+        updatedAt: values.deadline ? values.deadline.toISOString() : null,
+        owner: user?._id || "",
       };
 
        try {
@@ -104,7 +108,9 @@ const TaskList: React.FC = () => {
                 description: values.description || '',
                 deadline: values.deadline ? values.deadline.toISOString() : null,
                 xpReward: values.xpReward || 10,
-                tokenReward: Math.ceil((values.xpReward || 10) / 5) // Phần thưởng token mặc định là 1/5 của XP
+                tokenReward: Math.ceil((values.xpReward || 10) / 5), // Phần thưởng token mặc định là 1/5 của XP
+                updatedAt: values.deadline ? values.deadline.toISOString() : null,
+                owner: user?._id || "",
             }
 
             updateTask(editingTask._id || '', taskData);
@@ -157,24 +163,6 @@ const TaskList: React.FC = () => {
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
-
-                <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
-                  <DialogTrigger asChild>
-                    <Button size="sm">
-                      <Plus className="mr-1 w-4 h-4" />
-                      Add Task
-                    </Button>
-                  </DialogTrigger>
-                  <DialogContent>
-                    <DialogHeader>
-                      <DialogTitle>Create a New Task</DialogTitle>
-                    </DialogHeader>
-                    <TaskForm
-                      onSubmit={handleAddTask}
-                      onCancel={() => setShowAddDialog(false)}
-                    />
-                  </DialogContent>
-                </Dialog>
               </div>
             </div>
 
@@ -182,9 +170,22 @@ const TaskList: React.FC = () => {
               {sortedTasks.length === 0 ? (
                 <div className="py-10 text-center">
                   <p className="mb-4 text-muted-foreground">No tasks found</p>
-                  <Button onClick={() => setShowAddDialog(true)}>
-                    Create your first task
-                  </Button>
+                  <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
+                    <DialogTrigger asChild>
+                      <Button onClick={() => setShowAddDialog(true)}>
+                        Create your first task
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent>
+                      <DialogHeader>
+                        <DialogTitle>Create a New Task</DialogTitle>
+                      </DialogHeader>
+                      <TaskForm
+                        onSubmit={handleAddTask}
+                        onCancel={() => setShowAddDialog(false)}
+                      />
+                    </DialogContent>
+                  </Dialog>
                 </div>
               ) : (
                 <div className="gap-4 grid grid-cols-1 md:grid-cols-2">
@@ -195,6 +196,23 @@ const TaskList: React.FC = () => {
                       onEdit={() => handleEditTask(task)}
                     />
                   ))}
+                  <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
+                    <DialogTrigger asChild>
+                      <Button className="sm:col-span-2 sm:w-[50%]" size="sm">
+                        <Plus className="mr-1 w-4 h-4" />
+                        Add new Task
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent>
+                      <DialogHeader>
+                        <DialogTitle>Create a New Task</DialogTitle>
+                      </DialogHeader>
+                      <TaskForm
+                        onSubmit={handleAddTask}
+                        onCancel={() => setShowAddDialog(false)}
+                      />
+                    </DialogContent>
+                  </Dialog>
                 </div>
               )}
             </TabsContent>

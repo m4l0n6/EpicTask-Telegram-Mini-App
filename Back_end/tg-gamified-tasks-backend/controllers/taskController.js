@@ -143,43 +143,42 @@ const deleteTask = async (req, res, next) => {
 };
 
 const completeTask = async (req, res, next) => {
-    console.log('\n--- [taskController] Running completeTask ---');
-    console.log('[taskController] Task ID:', req.params.id);
-    console.log('[taskController] User:', req.user);
+  try {
     const taskId = req.params.id;
     const ownerId = req.user.id;
 
-    try {
-         const task = await Task.findOne({ _id: taskId, owner: ownerId });
-         if (!task) {
-             return res.status(404).json({ message: 'Task not found or you do not have permission.' });
-         }
-         if (task.completed) {
-             return res.status(400).json({ message: 'Task is already completed.' });
-         }
-         task.completed = true;
-         await task.save();     
-         const gamificationResult = await GamificationService.awardXp(ownerId, task.xpReward);     
-         if(gamificationResult.error){
-             console.error("[taskController] Error from GamificationService but task marked complete:", gamificationResult.error);
-         }
-
-         res.status(200).json({
-             message: 'Task marked as complete!',
-             task: task,  
-             xpAwarded: task.xpReward,
-             leveledUp: gamificationResult.leveledUp,
-             newLevel: gamificationResult.user?.level, 
-             newBadges: gamificationResult.newBadges
-         });
-
-    } catch (error) {
-         if (error.name === 'CastError') { 
-             return res.status(400).json({ message: 'Invalid Task ID format.' });
-         }
-        console.error('[taskController] Error completing task:', error);
-        next(error);
+    const task = await Task.findOne({ _id: taskId, owner: ownerId });
+    if (!task) {
+      return res.status(404).json({ message: 'Task not found or you do not have permission.' });
     }
+    if (task.completed) {
+      return res.status(400).json({ message: 'Task is already completed.' });
+    }
+
+    // Đánh dấu task là hoàn thành
+    task.completed = true;
+    task.completedAt = new Date();
+    await task.save();
+
+    // Cộng XP cho người dùng
+    const xpGained = task.xpReward || 10;
+    const tokenGained = Math.ceil(xpGained * 0.2); // Tính token dựa trên XP (20%)
+    const { user, leveledUp } = await GamificationService.awardXp(ownerId, xpGained);
+
+    // Cộng token cho người dùng
+    await GamificationService.awardTokens(ownerId, tokenGained);
+
+    // Trả về kết quả
+    res.status(200).json({
+      task,
+      xpGained,
+      tokenGained,
+      leveledUp,
+    });
+  } catch (error) {
+    console.error('[taskController] Error completing task:', error);
+    next(error);
+  }
 };
 
 

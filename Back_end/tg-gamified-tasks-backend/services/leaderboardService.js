@@ -1,4 +1,4 @@
- const Redis = require('ioredis');
+const Redis = require('ioredis');
 require('dotenv').config();
 const User = require('../models/User');
 
@@ -37,72 +37,60 @@ const getUserRankAndScore = async (userId) => {
 
  
 const getTopUsers = async (limit = 10) => {
-    console.log(`[LeaderboardService] Getting top ${limit} users`);
-    try {
-       
-      const results = await redisClient.zrevrange(LEADERBOARD_KEY, 0, limit - 1, 'WITHSCORES');
-       
-  
-      if (!results || results.length === 0) {
-        console.log('[LeaderboardService] Leaderboard is empty.');
-        return [];  
-      }
-  
-   
-      const userIds = [];
-      const scores = {};
-      for (let i = 0; i < results.length; i += 2) {
-        const userId = results[i];  
-        const score = parseInt(results[i + 1], 10);
-        userIds.push(userId);
-        scores[userId] = score;
-      }
-  
-       
-      console.log(`[LeaderboardService] Fetching user details from MongoDB for ${userIds.length} users.`);
-      
-      const users = await User.find({ _id: { $in: userIds } })
-                              .select('username avatar')  
-                              .lean();  
-  
-      
-      const usersById = users.reduce((map, user) => {
-          map[user._id.toString()] = user; 
-          return map;
-      }, {});
-      console.log(`[LeaderboardService] Found ${users.length} matching users in MongoDB.`);
-  
-    
-      const finalLeaderboard = [];
-      let rank = 1;
-      for (const userId of userIds) {  
-        const userDetails = usersById[userId];  
-        const userScore = scores[userId];      
-  
-        if (userDetails) {  
-          finalLeaderboard.push({
-            rank: rank++,
-            userId: userId,  
-            score: userScore,  
-            username: userDetails.username,  
-            avatar: userDetails.avatar,      
-          });
-        } else {
-          
-          console.warn(`[LeaderboardService] User ${userId} found in Redis leaderboard but not in MongoDB collection 'users'. Skipping.`);
-           
-        }
-      }
-  
-      console.log(`[LeaderboardService] Returning leaderboard with ${finalLeaderboard.length} users.`);
-      return finalLeaderboard;
-  
-    } catch (err) {
-      console.error(`[LeaderboardService] Error getting top users:`, err);
-      
-      return [];  
+  console.log(`[LeaderboardService] Getting top ${limit} users`);
+  try {
+    const results = await redisClient.zrevrange(LEADERBOARD_KEY, 0, limit - 1, 'WITHSCORES');
+
+    if (!results || results.length === 0) {
+      console.log('[LeaderboardService] Leaderboard is empty.');
+      return [];
     }
-  };
+
+    const userIds = [];
+    const scores = {};
+    for (let i = 0; i < results.length; i += 2) {
+      const userId = results[i];
+      const score = parseInt(results[i + 1], 10);
+      userIds.push(userId);
+      scores[userId] = score;
+    }
+
+    const users = await User.find({ _id: { $in: userIds } })
+      .select('username avatar level xp') // Thêm `level` và `xp`
+      .lean();
+
+    const usersById = users.reduce((map, user) => {
+      map[user._id.toString()] = user;
+      return map;
+    }, {});
+
+    const finalLeaderboard = [];
+    let rank = 1;
+    for (const userId of userIds) {
+      const userDetails = usersById[userId];
+      const userScore = scores[userId];
+
+      if (userDetails) {
+        finalLeaderboard.push({
+          rank: rank++,
+          userId: userId,
+          score: userScore,
+          username: userDetails.username,
+          avatar: userDetails.avatar,
+          level: userDetails.level, // Thêm `level`
+          xp: userDetails.xp, // Thêm `xp`
+        });
+      } else {
+        console.warn(`[LeaderboardService] User ${userId} not found in MongoDB.`);
+      }
+    }
+
+    return finalLeaderboard;
+  } catch (err) {
+    console.error(`[LeaderboardService] Error getting top users:`, err);
+    return [];
+  }
+};
 
 
 module.exports = {

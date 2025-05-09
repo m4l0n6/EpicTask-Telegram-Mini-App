@@ -1,61 +1,15 @@
 
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { useNotification } from "@/contexts/NotificationContext";
 import { Button } from '@/components/ui/button';
 import { Bell, BellOff, Check, Calendar, Trophy, Award } from 'lucide-react';
 import { formatDistanceToNow, parseISO } from 'date-fns';
 import Loading from '../ui/Loading';
 
 const NotificationList: React.FC = () => {
-  const notifications = [
-    {
-      id: "1",
-      type: "deadline",
-      message: 'Your task "Complete React project" is due tomorrow!',
-      createdAt: "2023-10-01T10:00:00Z",
-      read: false,
-    },
-    {
-      id: "2",
-      type: "levelUp",
-      message: "Congratulations! You have leveled up to Level 5!",
-      createdAt: "2023-09-30T15:30:00Z",
-      read: true,
-    },
-    {
-      id: "3",
-      type: "badge",
-      message: 'You earned the "Top Performer" badge!',
-      createdAt: "2023-09-29T08:45:00Z",
-      read: false,
-    },
-    {
-      id: "4",
-      type: "leaderboard",
-      message: "You are now ranked #3 on the leaderboard!",
-      createdAt: "2023-09-28T12:00:00Z",
-      read: true,
-    },
-  ];
-
-  
-  const markAllAsRead = () => {
-    notifications.forEach(notification => {
-      notification.read = true;
-    });
-    // Ideally, update the state or backend here if notifications are managed in state or fetched from an API.
-  };
-
-  const markAsRead = (id: string) => {
-    const notification = notifications.find(notification => notification.id === id);
-    if (notification) {
-      notification.read = true;
-    }
-    // Ideally, update the state or backend here if notifications are managed in state or fetched from an API.
-  };
-
-  // Calculate unread notifications count
-  const unreadCount = notifications.filter(notification => !notification.read).length;
+  const { notifications, unreadCount, markAsRead, markAllAsRead } =
+    useNotification();
 
   if (!notifications) {
     return <Loading message="Loading notifications..." />;

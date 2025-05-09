@@ -46,7 +46,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
         // Xử lý daily login rewards
         try {
           const { isFirstLogin, tokensAwarded, currentStreak } =
-            processDailyLogin();
+            await processDailyLogin(); // Thêm await để đảm bảo xử lý đúng thứ tự
 
           if (isFirstLogin && tokensAwarded > 0) {
             toast({
@@ -130,7 +130,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
 
       // Xử lý daily login
       const { isFirstLogin, tokensAwarded, currentStreak } =
-        processDailyLogin();
+        await processDailyLogin();
 
       if (isFirstLogin && tokensAwarded > 0) {
         toast({

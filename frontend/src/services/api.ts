@@ -76,9 +76,9 @@ export const taskApi = {
   },
 
   // Hoàn thành task
-  completeTask: async (_id: string) => {
-    console.log('Task completed:', _id); // Log thông tin task đã hoàn thành   
-    const response = await api.post(`/tasks/${_id}/complete`);
+  completeTask: async (taskId: string) => {
+    const response = await api.post(`/tasks/${taskId}/complete`);
+    console.log("API Response:", response.data); // Log để kiểm tra response
     return response.data;
   },
 };
@@ -120,12 +120,21 @@ export const userApi = {
     const response = await api.post("/users/notifications", notification);
     return response.data;
   },
+
+  processDailyLogin: async (): Promise<{
+    isFirstLogin: boolean;
+    tokensAwarded: number;
+    currentStreak: number;
+  }> => {
+    const response = await api.post("/auth/daily-login");
+    return response.data;
+  },
 };
 
 // Các API liên quan đến bảng xếp hạng
 export const leaderboardApi = {
-  getLeaderboard: async (limit: number = 10) => {
-    const response = await api.get(`/leaderboard?limit=${limit}`);
+  getLeaderboard: async () => {
+    const response = await api.get(`/leaderboard`);
     return response.data;
   },
 };
@@ -136,6 +145,13 @@ export const badgeApi = {
     const response = await api.get("/badges");
     return response.data;
   },
+  
+  getUserBadges: async () => {
+    // API trả về thông tin user, bao gồm mảng badges
+    const response = await api.get("/users/me");
+    // Dựa vào userController.js, badges được trả về trong trường badges
+    return response.data.badges || [];
+  }
 };
 
 export default api;

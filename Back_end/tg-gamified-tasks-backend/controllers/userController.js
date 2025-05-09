@@ -2,6 +2,7 @@ const User = require('../models/User');
 const Task = require('../models/Task');  
 const UserBadge = require('../models/UserBadge');  
 const LeaderboardService = require('../services/leaderboardService');  
+const gamificationService = require('../services/gamificationService');
 
 const getMyProfile = async (req, res, next) => {
   console.log('\n--- [userController] Running getMyProfile ---');
@@ -57,6 +58,28 @@ res.status(200).json(responseData);
   }
 };
 
+const addTokens = async (req, res, next) => {
+  try {
+    const userId = req.user.id;
+    const { amount } = req.body;
+
+    if (!amount || isNaN(amount) || amount <= 0) {
+      return res.status(400).json({ message: 'Invalid token amount' });
+    }
+
+    const updatedUser = await gamificationService.awardTokens(userId, amount);
+    
+    if (!updatedUser) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    res.status(200).json(updatedUser);
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   getMyProfile,
+  addTokens
 };
