@@ -2,10 +2,10 @@ import React, { createContext, useContext, useState, useEffect } from "react";
 import { Task } from "@/types";
 
 import { useAuth } from "./AuthContext";
-
-
 import { taskApi } from "@/services/api";
 import { toast } from "@/hooks/use-toast";
+
+import { useBadge } from "@/contexts/BadgeContext";
 
 interface TaskContextType {
   tasks: Task[];
@@ -34,6 +34,7 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [tasks, setTasks] = useState<Task[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const { user } = useAuth();
+  const { refreshBadges } = useBadge();
 
   useEffect(() => {
     if (user) {
@@ -237,69 +238,82 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   // Thông báo hoàn thành nhiệm vụ
   const markTaskComplete = async (taskId: string) => {
-    try {
-      // Trước khi gọi API, kiểm tra xem ID có hợp lệ không
-      if (!taskId) {
-        toast({
-          title: "Error",
-          description: "Invalid task ID.",
-          variant: "destructive",
-        });
-        return;
-      }
-
-      // Tìm task trong state để lấy _id nếu tồn tại
-      const taskToComplete = tasks.find((task) => task._id === taskId);
-      if (!taskToComplete) {
-        toast({
-          title: "Error",
-          description: "Task not found.",
-          variant: "destructive",
-        });
-        return;
-      }
-
-      // Sử dụng _id thay vì id nếu cần
-      const taskDbId = taskToComplete._id || taskId;
-
-      const response = await taskApi.completeTask(taskDbId);
-
-      const { xpGained, tokenGained, leveledUp } = response;
-
-      // Update local task state
-      setTasks((prevTasks) =>
-        prevTasks.map((t) =>
-          t._id === taskId
-            ? {
-                ...t,
-                completed: true,
-                completedAt: new Date().toISOString(),
-              }
-            : t
-        )
-      );
-
-      // Show toast with animation
-      toast({
-        title: "Task completed!",
-        description: `You earned ${xpGained} XP and ${tokenGained} tokens${
-          leveledUp ? " and leveled up!" : "!"
-        }`,
-        variant: "default",
-      });
-
-      // Force reload tasks to ensure sync with storage
-      loadTasks();
-    } catch (error) {
-      const errorMessage =
-        error instanceof Error ? error.message : "Could not complete the task.";
+  try {
+    if (!taskId) {
       toast({
         title: "Error",
-        description: errorMessage,
+        description: "Invalid task ID.",
         variant: "destructive",
       });
+      return;
     }
-  };
+
+    const taskToComplete = tasks.find((task) => task._id === taskId);
+    if (!taskToComplete) {
+      toast({
+        title: "Error",
+        description: "Task not found.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const response = await taskApi.completeTask(taskId);
+    const { xpGained, tokenGained, leveledUp } = response;
+
+    // Cập nhật state
+    setTasks((prevTasks) =>
+      prevTasks.map((t) =>
+        t._id === taskId
+          ? {
+              ...t,
+              completed: true,
+              completedAt: new Date().toISOString(),
+            }
+          : t
+      )
+    );
+
+    // Hiển thị thông báo
+    toast({
+      title: "Task completed!",
+      description: `You earned ${xpGained} XP and ${tokenGained} tokens${
+        leveledUp ? " and leveled up!" : "!"
+      }`,
+      variant: "default",
+    });
+
+    // Làm mới huy hiệu để kiểm tra nếu đã mở khóa huy hiệu mới
+    await refreshBadges();
+
+    // Hiển thị thông báo về huy hiệu mới nếu có
+    interface NewBadge {
+      title: string;
+      description: string;
+      icon: string;
+    }
+
+    if (response.newBadges && response.newBadges.length > 0) {
+      response.newBadges.forEach((badge: NewBadge) => {
+        toast({
+          title: "Badge Unlocked! 🎉",
+          description: `You've earned the "${badge.title}" badge!`,
+          variant: "default",
+        });
+      });
+    }
+
+    // Tải lại danh sách nhiệm vụ để đồng bộ
+    loadTasks();
+  } catch (error) {
+    console.error("Error completing task:", error);
+    toast({
+      title: "Error",
+      description: "Failed to complete the task.",
+      variant: "destructive",
+    });
+  }
+};
 
   return (
     <TaskContext.Provider
@@ -319,10 +333,10 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
   );
 }
 
-export const useTask = (): TaskContextType => {
+export function useTask() {
   const context = useContext(TaskContext);
   if (context === undefined) {
     throw new Error("useTask must be used within a TaskProvider");
   }
   return context;
-};
+}

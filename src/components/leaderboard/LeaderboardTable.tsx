@@ -1,60 +1,88 @@
-import React from 'react';
-
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Trophy, Medal, Award, X } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import React, { useEffect } from "react";
+import { useLeaderboard } from "@/contexts/LeaderboardContext";
+import { useAuth } from "@/contexts/AuthContext";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { Trophy, Medal, Award, X, RefreshCw } from "lucide-react";
+import Loading from "../ui/Loading";
+import { Button } from "@/components/ui/button";
 
 const LeaderboardTable: React.FC = () => {
-  // Mock data
-  const leaderboard = [
-    { rank: 1, userId: '1', username: 'Alice', avatarUrl: '', level: 50, xp: 12000 },
-    { rank: 2, userId: '2', username: 'Bob', avatarUrl: '', level: 45, xp: 11000 },
-    { rank: 3, userId: '3', username: 'Charlie', avatarUrl: '', level: 40, xp: 10000 },
-    { rank: 4, userId: '4', username: 'David', avatarUrl: '', level: 35, xp: 9000 },
-    { rank: 5, userId: '5', username: 'Eve', avatarUrl: '', level: 30, xp: 8000 },
-    { rank: 6, userId: '6', username: 'Frank', avatarUrl: '', level: 25, xp: 7000 },
-    { rank: 7, userId: '7', username: 'Grace', avatarUrl: '', level: 20, xp: 6000 },
-    { rank: 8, userId: '8', username: 'Hank', avatarUrl: '', level: 15, xp: 5000 },
-    { rank: 9, userId: '9', username: 'Ivy', avatarUrl: '', level: 10, xp: 4000 },
-    { rank: 10, userId: '10', username: 'Jack', avatarUrl: '', level: 5, xp: 3000 },
-  ];
+  const { leaderboard, isLoading, refreshLeaderboard } =
+    useLeaderboard();
+  const { user } = useAuth();
 
-  const userRankEntry = {
-    rank: 15,
-    userId: '11',
-    username: 'You',
-    avatarUrl: '',
-    level: 3,
-    xp: 1500,
-  };
+  useEffect(() => {
+    refreshLeaderboard(); 
+  }, []);
 
-  const user = { id: '11' }; // Current user ID
+  if (isLoading) {
+    console.log(leaderboard)
+    return <Loading message="Loading leaderboard..." />;
+  }
 
+  if (leaderboard.length === 0) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-center">EpicTasks Leaderboard</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p className="text-muted-foreground text-center">
+            No leaderboard data available. Try refreshing the leaderboard.
+          </p>
+          <div className="flex justify-center mt-4">
+            <Button onClick={refreshLeaderboard} variant="outline">
+              <RefreshCw className="mr-2 w-4 h-4" />
+              Refresh
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  // Get position-specific icons and styles
   const getRankDisplay = (rank: number) => {
     if (rank === 1) {
-      return { 
+      return {
         icon: <Trophy className="fill-epic-yellow w-5 h-5 text-epic-yellow" />,
-        color: 'text-epic-yellow'
+        color: "text-epic-yellow",
       };
     } else if (rank === 2) {
-      return { 
+      return {
         icon: <Medal className="fill-slate-400 w-5 h-5 text-slate-400" />,
-        color: 'text-slate-400'
+        color: "text-slate-400",
       };
     } else if (rank === 3) {
-      return { 
+      return {
         icon: <Award className="fill-amber-700 w-5 h-5 text-amber-700" />,
-        color: 'text-amber-700'
+        color: "text-amber-700",
       };
     }
-    
-    return { 
+
+    return {
       icon: <span className="font-medium text-sm">{rank}</span>,
-      color: 'text-muted-foreground'
+      color: "text-muted-foreground",
     };
   };
+
+  // Precompute user-related data
+  const isUserInTop = leaderboard
+    .slice(0, 10)
+    .some((item) => item.userId === user?._id);
+  const userRankEntry =
+    !isUserInTop && user
+      ? leaderboard.find((item) => item.userId === user._id)
+      : null;
 
   return (
     <Card>
@@ -68,11 +96,15 @@ const LeaderboardTable: React.FC = () => {
           <X className="w-5 h-5" />
           <span className="sr-only">Close</span>
         </Button>
-        <CardTitle className="mb-6 font-bold text-2xl text-center">
-          Leaderboard
-        </CardTitle>
+        <CardTitle className="text-center">EpicTasks Leaderboard</CardTitle>
       </CardHeader>
       <CardContent>
+        <div className="flex justify-end mb-4">
+          <Button onClick={refreshLeaderboard} variant="outline" size="sm">
+            <RefreshCw className="mr-2 w-4 h-4" />
+            Refresh
+          </Button>
+        </div>
         <Table>
           <TableHeader>
             <TableRow>
@@ -85,7 +117,7 @@ const LeaderboardTable: React.FC = () => {
           <TableBody>
             {leaderboard.slice(0, 10).map((entry) => {
               const rankDisplay = getRankDisplay(entry.rank);
-              const isCurrentUser = entry.userId === user?.id;
+              const isCurrentUser = entry.userId === user?._id;
 
               return (
                 <TableRow
@@ -101,11 +133,11 @@ const LeaderboardTable: React.FC = () => {
                     <div className="flex items-center gap-2">
                       <Avatar className="w-8 h-8">
                         <AvatarImage
-                          src={entry.avatarUrl}
-                          alt={entry.username}
+                          src={entry.avatarUrl|| ""}
+                          alt={entry.username || ""}
                         />
                         <AvatarFallback>
-                          {entry.username.substring(0, 2).toUpperCase()}
+                          {(entry.username ?? "").substring(0, 2).toUpperCase()}
                         </AvatarFallback>
                       </Avatar>
                       <span className={isCurrentUser ? "font-bold" : ""}>
@@ -114,10 +146,11 @@ const LeaderboardTable: React.FC = () => {
                     </div>
                   </TableCell>
                   <TableCell className="font-medium text-right">
-                    {entry.level}
+                    {entry.level || "N/A"}{" "}
+                    {/* Hiển thị "N/A" nếu không có level */}
                   </TableCell>
                   <TableCell className="font-medium text-right">
-                    {entry.xp}
+                    {entry.xp || 0} {/* Hiển thị 0 nếu không có xp */}
                   </TableCell>
                 </TableRow>
               );
@@ -146,11 +179,11 @@ const LeaderboardTable: React.FC = () => {
                     <div className="flex items-center gap-2">
                       <Avatar className="w-8 h-8">
                         <AvatarImage
-                          src={userRankEntry.avatarUrl}
-                          alt={userRankEntry.username}
+                          src={userRankEntry.avatarUrl || ""}
+                          alt={userRankEntry.username || ""}
                         />
                         <AvatarFallback>
-                          {userRankEntry.username.substring(0, 2).toUpperCase()}
+                          {(userRankEntry.username ?? "").substring(0, 2).toUpperCase()}
                         </AvatarFallback>
                       </Avatar>
                       <span className="font-bold">

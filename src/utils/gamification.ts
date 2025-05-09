@@ -7,8 +7,6 @@ import {
 } from "@/types";
 import { v4 as uuidv4 } from "uuid";
 import {
-  getUser,
-  saveUser,
   addNotification,
   unlockBadge,
   getBadges,
@@ -17,7 +15,7 @@ import {
 } from "./storage";
 import { userApi } from "@/services/api";
 import { taskApi } from "@/services/api";
-import { addDays, isSameDay, startOfDay } from "date-fns";
+import { addDays } from "date-fns";
 
 // Đinh nghĩa các hằng số cho XP và cấp độ
 export const XP_PER_LEVEL = 100;
@@ -98,16 +96,19 @@ export const addTokensToUser = async (
     // Gọi API để thêm tokens
     const updatedUser = await userApi.addTokens(tokenAmount);
 
-    // // Tạo thông báo cho việc nhận token qua API
-    // const notification: AppNotification = {
-    //   id: uuidv4(),
-    //   type: "token",
-    //   message: `You've earned ${tokenAmount} tokens!`,
-    //   read: false,
-    //   createdAt: new Date().toISOString(),
-    // };
-
-    // await userApi.addNotification(notification as any);
+    // Tạo thông báo cho việc nhận token
+    const notification: AppNotification = {
+      id: uuidv4(),
+      type: "token",
+      message: `You've earned ${tokenAmount} tokens!`,
+      read: false,
+      createdAt: new Date().toISOString(),
+    };
+    
+    // Thêm thông báo
+    // Nếu bạn có API thông báo, hãy sử dụng nó
+    // Nếu không, sử dụng local storage như hiện tại
+    addNotification(notification);
 
     return { user: updatedUser, newTokens: tokenAmount };
   } catch (error) {
@@ -127,7 +128,6 @@ export const completeTask = async (
 }> => {
   try {
     // Gọi API để hoàn thành nhiệm vụ
-    // API nên trả về tất cả thông tin cần thiết trong một request duy nhất
     const response = await taskApi.completeTask(taskId);
 
     // API trả về task đã cập nhật, số XP, token nhận được, và trạng thái lên cấp
@@ -143,12 +143,12 @@ export const completeTask = async (
   }
 };
 
-// Check and unlock badges based on level
+// Kiểm tra và mở khóa huy hiệu dựa trên cấp độ
 export const checkAndUnlockLevelBadges = (level: number): Badge[] => {
   const badges = getBadges();
   const unlockedBadges: Badge[] = [];
 
-  // Define level badges to check
+  // Định nghĩa các huy hiệu theo cấp độ
   const levelBadges = [
     { level: 5, badgeName: "Apprentice" },
     { level: 10, badgeName: "Expert" },
@@ -160,18 +160,18 @@ export const checkAndUnlockLevelBadges = (level: number): Badge[] => {
   for (const levelBadge of levelBadges) {
     if (level >= levelBadge.level) {
       const badge = badges.find(
-        (b) => b.name === levelBadge.badgeName && !b.unlockedAt
+        (b) => b.title === levelBadge.badgeName && !b.unlockedAt
       );
       if (badge) {
-        const unlockedBadge = unlockBadge(badge.id);
+        const unlockedBadge = unlockBadge(badge._id);
         if (unlockedBadge) {
           unlockedBadges.push(unlockedBadge);
 
-          // Create notification for badge unlock
+          // Tao thông báo cho việc mở khóa huy hiệu
           const notification: AppNotification = {
             id: uuidv4(),
             type: "badge",
-            message: `You've unlocked the "${unlockedBadge.name}" badge!`,
+            message: `You've unlocked the "${unlockedBadge.title}" badge!`,
             read: false,
             createdAt: new Date().toISOString(),
           };
@@ -184,12 +184,12 @@ export const checkAndUnlockLevelBadges = (level: number): Badge[] => {
   return unlockedBadges;
 };
 
-// Check and unlock badges based on task completion count
+// kiểm tra và mở khóa huy hiệu dựa trên số lượng nhiệm vụ đã hoàn thành
 export const checkAndUnlockTaskBadges = (completedTasks: number): Badge[] => {
   const badges = getBadges();
   const unlockedBadges: Badge[] = [];
 
-  // Define task completion badges
+  // Đình nghĩa các huy hiệu theo số lượng nhiệm vụ
   const taskBadges = [
     { tasks: 1, badgeName: "First Task" },
     { tasks: 10, badgeName: "Taskmaster" },
@@ -201,18 +201,18 @@ export const checkAndUnlockTaskBadges = (completedTasks: number): Badge[] => {
   for (const taskBadge of taskBadges) {
     if (completedTasks >= taskBadge.tasks) {
       const badge = badges.find(
-        (b) => b.name === taskBadge.badgeName && !b.unlockedAt
+        (b) => b.title === taskBadge.badgeName && !b.unlockedAt
       );
       if (badge) {
-        const unlockedBadge = unlockBadge(badge.id);
+        const unlockedBadge = unlockBadge(badge._id);
         if (unlockedBadge) {
           unlockedBadges.push(unlockedBadge);
 
-          // Create notification for badge unlock
+          // Tạo thông báo cho việc mở khóa huy hiệu
           const notification: AppNotification = {
             id: uuidv4(),
             type: "badge",
-            message: `You've unlocked the "${unlockedBadge.name}" badge!`,
+            message: `You've unlocked the "${unlockedBadge.title}" badge!`,
             read: false,
             createdAt: new Date().toISOString(),
           };
@@ -225,77 +225,77 @@ export const checkAndUnlockTaskBadges = (completedTasks: number): Badge[] => {
   return unlockedBadges;
 };
 
-// Initialize default badges
+// Định nghĩa các huy hiệu mặc định
 export const initializeDefaultBadges = (): Badge[] => {
   const defaultBadges: Badge[] = [
     {
-      id: uuidv4(),
-      name: "First Task",
+      _id: uuidv4(),
+      title: "First Task",
       description: "Complete your first task",
-      iconUrl: "🏆",
+      icon: "🏆",
       unlockedAt: null,
     },
     {
-      id: uuidv4(),
-      name: "Taskmaster",
+      _id: uuidv4(),
+      title: "Taskmaster",
       description: "Complete 10 tasks",
-      iconUrl: "🎯",
+      icon: "🎯",
       unlockedAt: null,
     },
     {
-      id: uuidv4(),
-      name: "Task Enthusiast",
+      _id: uuidv4(),
+      title: "Task Enthusiast",
       description: "Complete 25 tasks",
-      iconUrl: "⚡",
+      icon: "⚡",
       unlockedAt: null,
     },
     {
-      id: uuidv4(),
-      name: "Task Wizard",
+      _id: uuidv4(),
+      title: "Task Wizard",
       description: "Complete 50 tasks",
-      iconUrl: "🧙",
+      icon: "🧙",
       unlockedAt: null,
     },
     {
-      id: uuidv4(),
-      name: "Task Legend",
+      _id: uuidv4(),
+      title: "Task Legend",
       description: "Complete 100 tasks",
-      iconUrl: "👑",
+      icon: "👑",
       unlockedAt: null,
     },
     {
-      id: uuidv4(),
-      name: "Apprentice",
+      _id: uuidv4(),
+      title: "Apprentice",
       description: "Reach level 5",
-      iconUrl: "🌱",
+      icon: "🌱",
       unlockedAt: null,
     },
     {
-      id: uuidv4(),
-      name: "Expert",
+      _id: uuidv4(),
+      title: "Expert",
       description: "Reach level 10",
-      iconUrl: "🌟",
+      icon: "🌟",
       unlockedAt: null,
     },
     {
-      id: uuidv4(),
-      name: "Master",
+      _id: uuidv4(),
+      title: "Master",
       description: "Reach level 20",
-      iconUrl: "🔥",
+      icon: "🔥",
       unlockedAt: null,
     },
     {
-      id: uuidv4(),
-      name: "Grandmaster",
+      _id: uuidv4(),
+      title: "Grandmaster",
       description: "Reach level 30",
-      iconUrl: "💎",
+      icon: "💎",
       unlockedAt: null,
     },
     {
-      id: uuidv4(),
-      name: "Legendary",
+      _id: uuidv4(),
+      title: "Legendary",
       description: "Reach level 50",
-      iconUrl: "🏅",
+      icon: "🏅",
       unlockedAt: null,
     },
   ];
@@ -303,7 +303,7 @@ export const initializeDefaultBadges = (): Badge[] => {
   return defaultBadges;
 };
 
-// Generate leaderboard
+// Xuất danh sách người dùng cho bảng xếp hạng
 export const generateLeaderboard = (users: User[]) => {
   return users
     .slice()
@@ -319,77 +319,38 @@ export const generateLeaderboard = (users: User[]) => {
 };
 
 // Check if the user has logged in today and process daily login rewards
-export const processDailyLogin = (): {
+export const processDailyLogin = async (): Promise<{
   isFirstLogin: boolean;
   tokensAwarded: number;
   currentStreak: number;
-} => {
-  const user = getUser();
-  if (!user) {
-    throw new Error("User not found");
-  }
+}> => {
+  try {
+    const result = await userApi.processDailyLogin();
 
-  const now = new Date();
-  const today = startOfDay(now).toISOString();
-  const lastLogin = user.lastDailyLogin ? new Date(user.lastDailyLogin) : null;
-
-  // Check if this is first login of the day
-  const isFirstLogin = !lastLogin || !isSameDay(lastLogin, now);
-
-  if (isFirstLogin) {
-    // Check if we need to reset or increment streak
-    let newStreak = 1;
-    if (lastLogin) {
-      const yesterday = startOfDay(addDays(now, -1));
-      if (isSameDay(lastLogin, yesterday)) {
-        // Consecutive day login
-        newStreak = (user.dailyLoginStreak || 0) + 1;
+    if (result.isFirstLogin && result.tokensAwarded > 0) {
+      // Hiển thị thông báo về streak nếu cần
+      if (result.currentStreak > 1) {
+        const notification: AppNotification = {
+          id: uuidv4(),
+          type: "streak",
+          message: `You're on a ${result.currentStreak} day login streak! Keep it up!`,
+          read: false,
+          createdAt: new Date().toISOString(),
+        };
+        addNotification(notification);
       }
     }
 
-    // Calculate tokens to award
-    const streakBonus = Math.floor(
-      LOGIN_TOKEN_REWARD * STREAK_BONUS_MULTIPLIER * (newStreak - 1)
-    );
-    const tokensAwarded = LOGIN_TOKEN_REWARD + streakBonus;
-
-    // Update user data
-    user.lastDailyLogin = today;
-    user.dailyLoginStreak = newStreak;
-    addTokensToUser(tokensAwarded);
-
-    // Create streak notification if streak is growing
-    if (newStreak > 1) {
-      const notification: AppNotification = {
-        id: uuidv4(),
-        type: "streak",
-        message: `You're on a ${newStreak} day login streak! Keep it up!`,
-        read: false,
-        createdAt: new Date().toISOString(),
-      };
-      addNotification(notification);
-    }
-
-    // Update daily task progress for login type
-    updateDailyTaskProgress("login", 1);
-
-    // Update streak-based tasks
-    updateDailyTaskProgress("reach_streak", newStreak);
-
-    saveUser(user);
-
+    return result;
+  } catch (error) {
+    console.error("Error processing daily login:", error);
+    // Fallback để app không bị crash
     return {
-      isFirstLogin: true,
-      tokensAwarded,
-      currentStreak: newStreak,
+      isFirstLogin: false,
+      tokensAwarded: 0,
+      currentStreak: 0,
     };
   }
-
-  return {
-    isFirstLogin: false,
-    tokensAwarded: 0,
-    currentStreak: user.dailyLoginStreak || 0,
-  };
 };
 
 // Generate daily tasks for the user

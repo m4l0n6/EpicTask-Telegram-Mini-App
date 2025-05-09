@@ -3,9 +3,11 @@ import React from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { Bell, Calendar } from "lucide-react";
 import { Link } from "react-router-dom";
+import { useNotification } from "@/contexts/NotificationContext";
 
 const Header: React.FC = () => {
   const { user } = useAuth();
+  const { unreadCount } = useNotification();
 
   if (!user) return null;
   return (
@@ -26,7 +28,9 @@ const Header: React.FC = () => {
                 className="flex items-center bg-epic-yellow/10 hover:bg-epic-yellow/20 px-3 py-1 border-epic-yellow/30 rounded-full"
               >
                 <img src="../token.png" alt="" className="mr-2 w-8 h-8" />
-                <span className="font-medium text-stone-950">{user.tokens}</span>
+                <span className="font-medium text-stone-950">
+                  {user.tokens}
+                </span>
               </Link>
             </div>
 
@@ -35,9 +39,11 @@ const Header: React.FC = () => {
               className="relative hover:bg-accent p-2 rounded-full"
             >
               <Bell className="w-5 h-5" />
-              <span className="top-0 right-0 absolute flex justify-center items-center bg-epic-blue rounded-full w-4 h-4 text-[10px] text-white">
-                10
-              </span>
+              {unreadCount > 0 && (
+                <span className="top-0 right-0 absolute flex justify-center items-center bg-epic-blue rounded-full w-4 h-4 text-[10px] text-white">
+                  {unreadCount > 9 ? "9+" : unreadCount}
+                </span>
+              )}
             </Link>
 
             <Link to="/daily" className="hover:bg-accent p-2 rounded-full">
@@ -47,10 +53,7 @@ const Header: React.FC = () => {
             <Link to="profile">
               <div className="flex items-center space-x-2">
                 <Avatar className="w-8 h-8">
-                  <AvatarImage
-                    src={user.avatar}
-                    alt="User Avatar" 
-                  />
+                  <AvatarImage src={user.avatar} alt="User Avatar" />
                   <AvatarFallback className="bg-epic-blue rounded-full text-white">
                     <span className="text-sm">U</span>
                   </AvatarFallback>

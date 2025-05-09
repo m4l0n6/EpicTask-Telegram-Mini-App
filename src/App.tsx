@@ -13,27 +13,36 @@ import StorePage from "./pages/StorePage";
 
 import { TaskProvider } from "./contexts/TaskContext";
 import { AuthProvider } from "./contexts/AuthContext";
+import { LeaderboardProvider } from "./contexts/LeaderboardContext";
+import { NotificationProvider } from "./contexts/NotificationContext";
+import { BadgeProvider } from "./contexts/BadgeContext";
 
 const App = () => (
   <BrowserRouter>
-      <AuthProvider>
+    <AuthProvider>
+      <BadgeProvider>
         <TaskProvider>
-          <Toaster />
-          <Routes>
-            <Route path="/" element={<AppLayout />}>
-              <Route index element={<HomePage />} />
-              <Route path="tasks" element={<TasksPage />} />
-              <Route path="badges" element={<BadgesPage />} />
-              <Route path="leaderboard" element={<LeaderboardPage />} />
-              <Route path="notifications" element={<NotificationsPage />} />
-              <Route path="profile" element={<ProfilePage />} />
-              <Route path="daily" element={<DailyPage />} />
-              <Route path="store" element={<StorePage />} />
-            </Route>
-            <Route path="*" element={<NotFound />} />
-          </Routes>
+          <LeaderboardProvider>
+            <NotificationProvider>
+              <Toaster />
+              <Routes>
+                <Route path="/" element={<AppLayout />}>
+                  <Route index element={<HomePage />} />
+                  <Route path="tasks" element={<TasksPage />} />
+                  <Route path="badges" element={<BadgesPage />} />
+                  <Route path="leaderboard" element={<LeaderboardPage />} />
+                  <Route path="notifications" element={<NotificationsPage />} />
+                  <Route path="profile" element={<ProfilePage />} />
+                  <Route path="daily" element={<DailyPage />} />
+                  <Route path="store" element={<StorePage />} />
+                </Route>
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+            </NotificationProvider>
+          </LeaderboardProvider>
         </TaskProvider>
-      </AuthProvider>
+      </BadgeProvider>
+    </AuthProvider>
   </BrowserRouter>
 );
 

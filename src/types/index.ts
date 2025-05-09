@@ -36,12 +36,16 @@ export interface User {
 
 // Kiểu dữ liệu của huy hiệu
 // Huy hiệu là một phần thưởng mà người dùng có thể nhận được khi hoàn thành nhiệm vụ hoặc đạt được một cột mốc nào đó trong ứng dụng.
+
 export interface Badge {
-  id: string;
-  name: string;
+  _id: string;
+  title: string;
   description: string;
-  iconUrl: string;
+  icon: string;
   unlockedAt: string | null;
+  // Thêm các trường này
+  milestoneType?: "tasksCompleted" | "levelReached" | string;
+  milestoneValue?: number;
 }
 
 // Kiểu dữ liệu của bảng xếp hạng
