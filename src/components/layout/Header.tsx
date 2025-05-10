@@ -4,6 +4,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Bell, Calendar } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useNotification } from "@/contexts/NotificationContext";
+import ConnectionStatus from "@/components/ui/ConnectionStatus";
 
 const Header: React.FC = () => {
   const { user } = useAuth();
@@ -22,6 +23,9 @@ const Header: React.FC = () => {
           </Link>
 
           <div className="flex items-center space-x-3">
+            <div className="flex items-center">
+              <ConnectionStatus />
+            </div>
             <div className="flex items-center">
               <Link
                 to="/store"

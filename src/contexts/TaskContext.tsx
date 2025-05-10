@@ -10,6 +10,7 @@ import { useBadge } from "@/contexts/BadgeContext";
 interface TaskContextType {
   tasks: Task[];
   isLoading: boolean;
+  loadTasks: () => Promise<void>;
   addTask: (
     taskData: Omit<
       Task,
@@ -192,7 +193,7 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const getCompletedTasksCount = () => {
     if (!user) return 0;
 
-    return tasks.filter((task) => task.completed && task.userId === user._id)
+    return tasks.filter((task) => task.completed && task.owner === user._id)
       .length;
   };
 
@@ -320,6 +321,7 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
       value={{
         tasks,
         isLoading,
+        loadTasks,
         addTask,
         updateTask,
         deleteTask,

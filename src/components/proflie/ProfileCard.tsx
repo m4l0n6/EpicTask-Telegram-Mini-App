@@ -2,6 +2,7 @@ import React from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTask } from "@/contexts/TaskContext";
+import { useBadge } from "@/contexts/BadgeContext";
 import { useLeaderboard } from "@/contexts/LeaderboardContext";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -14,7 +15,7 @@ const ProfileCard: React.FC = () => {
   const { user, logout } = useAuth();
   const { getCompletedTasksCount } = useTask();
   const { userRank } = useLeaderboard();
-
+  const { unlockedBadges } = useBadge();
   const completedTasks = getCompletedTasksCount();
   const xpProgress = user ? calculateXpProgress(user) : 0;
   const xpForNext = user ? xpForNextLevel(user.level) : 0;
@@ -73,7 +74,7 @@ const ProfileCard: React.FC = () => {
 
           <div className="flex flex-col items-center bg-muted/30 p-3 rounded-lg">
             <Award className="mb-1 w-6 h-6 text-epic-purple" />
-            <span className="font-bold text-xl">100</span>
+            <span className="font-bold text-xl">{unlockedBadges.length}</span>
             <span className="text-muted-foreground text-xs">Badges</span>
           </div>
         </div>

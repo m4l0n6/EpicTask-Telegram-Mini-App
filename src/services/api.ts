@@ -35,7 +35,7 @@ export const taskApi = {
     if (filters?.completed !== undefined) {
       params.append("completed", String(filters.completed));
     }
-    const response = await api.get(`/tasks?${params}`);
+    const response = await api.get(`/tasks${params}`);
     return response.data;
   },
 

@@ -16,32 +16,38 @@ import { AuthProvider } from "./contexts/AuthContext";
 import { LeaderboardProvider } from "./contexts/LeaderboardContext";
 import { NotificationProvider } from "./contexts/NotificationContext";
 import { BadgeProvider } from "./contexts/BadgeContext";
+import { SocketProvider } from "@/contexts/SocketContext";
 
 const App = () => (
   <BrowserRouter>
     <AuthProvider>
-      <BadgeProvider>
-        <TaskProvider>
-          <LeaderboardProvider>
-            <NotificationProvider>
-              <Toaster />
-              <Routes>
-                <Route path="/" element={<AppLayout />}>
-                  <Route index element={<HomePage />} />
-                  <Route path="tasks" element={<TasksPage />} />
-                  <Route path="badges" element={<BadgesPage />} />
-                  <Route path="leaderboard" element={<LeaderboardPage />} />
-                  <Route path="notifications" element={<NotificationsPage />} />
-                  <Route path="profile" element={<ProfilePage />} />
-                  <Route path="daily" element={<DailyPage />} />
-                  <Route path="store" element={<StorePage />} />
-                </Route>
-                <Route path="*" element={<NotFound />} />
-              </Routes>
-            </NotificationProvider>
-          </LeaderboardProvider>
-        </TaskProvider>
-      </BadgeProvider>
+      <SocketProvider>
+        <BadgeProvider>
+          <TaskProvider>
+            <LeaderboardProvider>
+              <NotificationProvider>
+                <Toaster />
+                <Routes>
+                  <Route path="/" element={<AppLayout />}>
+                    <Route index element={<HomePage />} />
+                    <Route path="tasks" element={<TasksPage />} />
+                    <Route path="badges" element={<BadgesPage />} />
+                    <Route path="leaderboard" element={<LeaderboardPage />} />
+                    <Route
+                      path="notifications"
+                      element={<NotificationsPage />}
+                    />
+                    <Route path="profile" element={<ProfilePage />} />
+                    <Route path="daily" element={<DailyPage />} />
+                    <Route path="store" element={<StorePage />} />
+                  </Route>
+                  <Route path="*" element={<NotFound />} />
+                </Routes>
+              </NotificationProvider>
+            </LeaderboardProvider>
+          </TaskProvider>
+        </BadgeProvider>
+      </SocketProvider>
     </AuthProvider>
   </BrowserRouter>
 );
