@@ -101,7 +101,7 @@ export const getBadges = (): Badge[] => {
 // Mở khóa
 export const unlockBadge = (badgeId: string): Badge | null => {
   const badges = getBadges();
-  const badgeIndex = badges.findIndex((badge) => badge.id === badgeId);
+  const badgeIndex = badges.findIndex((badge) => badge._id === badgeId);
 
   if (badgeIndex !== -1 && !badges[badgeIndex].unlockedAt) {
     badges[badgeIndex].unlockedAt = new Date().toISOString();

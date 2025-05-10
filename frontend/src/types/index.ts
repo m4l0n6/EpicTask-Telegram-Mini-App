@@ -48,6 +48,7 @@ export interface Badge {
   milestoneValue?: number;
 }
 
+
 // Kiểu dữ liệu của bảng xếp hạng
 export interface Leaderboard {
   userId: string;

@@ -3,6 +3,7 @@ const Task = require('../models/Task');
 const UserBadge = require('../models/UserBadge');
 const Badge = require('../models/Badge');
 const leaderboardService = require('./leaderboardService'); 
+const SocketService = require('./socketService');
 
 
 const LEVEL_XP_THRESHOLD = 100;  
@@ -19,29 +20,29 @@ const awardXp = async (userId, xpToAdd) => {
     const oldXp = user.xp || 0;
     const oldLevel = user.level || 1;
     const newXp = oldXp + xpToAdd;
-    
+
     // Tính toán level mới
     const newLevel = Math.floor(newXp / 100) + 1;
-    
+
     // Cập nhật thông tin người dùng
     user.xp = newXp;
     user.level = newLevel;
     await user.save();
-    
+
     const leveledUp = newLevel > oldLevel;
-    
+
     // Kiểm tra và trao huy hiệu dựa trên các tiêu chí
-    if (leveledUp) {
-      await checkAndAwardBadges(userId, { level: newLevel });
+    if (leveledUp && io) {
+      SocketService.notifyLevelUp(io, userId, { oldLevel, newLevel });
     }
-    
+
     // 2. Kiểm tra số nhiệm vụ đã hoàn thành
-    const completedTaskCount = await Task.countDocuments({ 
-      owner: userId, 
-      completed: true 
+    const completedTaskCount = await Task.countDocuments({
+      owner: userId,
+      completed: true,
     });
     await checkAndAwardBadges(userId, { tasksCompleted: completedTaskCount });
-    
+
     return { user, leveledUp };
   } catch (err) {
     console.error(`[GamificationService] Error awarding XP to ${userId}:`, err);
@@ -68,9 +69,16 @@ const checkAndAwardBadges = async (userId, criteria) => {
             }
 
             if (eligible) {
-                console.log(`[GamificationService] Awarding badge "${badge.title}" to ${userId}`);
-                await UserBadge.create({ user: userId, badge: badge._id });
-                newlyAwardedBadges.push(badge);
+              console.log(
+                `[GamificationService] Awarding badge "${badge.title}" to ${userId}`
+              );
+              await UserBadge.create({ user: userId, badge: badge._id });
+              newlyAwardedBadges.push(badge);
+
+              // Thêm thông báo qua WebSocket nếu io được cung cấp
+              if (io) {
+                SocketService.notifyNewBadge(io, userId, badge);
+              }
             }
         }
         return newlyAwardedBadges;

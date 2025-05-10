@@ -32,7 +32,7 @@ interface BadgeContextType {
   badges: BadgeType[];
   unlockedBadges: BadgeType[];
   lockedBadges: BadgeType[];
-  badgesByType: BadgesByType; // Thêm phân loại này
+  badgesByType: BadgesByType;
   isLoading: boolean;
   refreshBadges: () => Promise<void>;
 }
@@ -120,6 +120,20 @@ export const BadgeProvider: React.FC<{ children: ReactNode }> = ({ children }) =
 
   useEffect(() => {
     refreshBadges();
+  }, []);
+
+  useEffect(() => {
+    // Lắng nghe sự kiện badge unlocked từ socket
+    const handleBadgeUnlocked = () => {
+      refreshBadges();
+    };
+    
+    document.addEventListener('badgeUnlocked', handleBadgeUnlocked);
+    
+    // Cleanup
+    return () => {
+      document.removeEventListener('badgeUnlocked', handleBadgeUnlocked);
+    };
   }, []);
 
   return (

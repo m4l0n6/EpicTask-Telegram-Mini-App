@@ -1,5 +1,6 @@
 const Task = require('../models/Task');
-const GamificationService = require('../services/gamificationService'); 
+const GamificationService = require('../services/gamificationService');
+const SocketService = require('../services/socketService'); // Thêm dòng này
 
 const createTask = async (req, res, next) => {
     console.log('\n--- [taskController] Running createTask ---');
@@ -155,6 +156,8 @@ const completeTask = async (req, res, next) => {
       return res.status(400).json({ message: 'Task is already completed.' });
     }
 
+    const io = req.app.get("io");
+
     // Đánh dấu task là hoàn thành
     task.completed = true;
     task.completedAt = new Date();
@@ -167,6 +170,11 @@ const completeTask = async (req, res, next) => {
 
     // Cộng token cho người dùng
     await GamificationService.awardTokens(ownerId, tokenGained);
+
+    if (io) {
+      SocketService.notifyTaskUpdate(io, ownerId, task);
+      SocketService.notifyTokensAdded(io, ownerId, tokenGained);
+    }
 
     // Trả về kết quả
     res.status(200).json({

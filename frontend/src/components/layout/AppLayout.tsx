@@ -20,7 +20,7 @@ const AppLayout: React.FC = () => {
   }
 
     return (
-      <div className="flex flex-col bg-gradient-to-br from-background to-background/70 min-h-screen">
+      <div className="relative flex flex-col bg-gradient-to-br from-background to-background/70 min-h-screen">
         <Header />
         <main className="flex-grow mx-auto px-4 py-6 pb-20 container">
           <Outlet />

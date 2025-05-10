@@ -75,6 +75,32 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
     checkAuth();
   }, []);
 
+  // Thêm useEffect để lắng nghe sự kiện tokens_added từ socket hoặc qua event system
+  useEffect(() => {
+    const handleTokensAdded = (event: CustomEvent) => {
+      // Thêm log để debug
+      console.log("Tokens added event received:", event.detail?.amount);
+      
+      // Cập nhật user state với token mới
+      if (user) {
+        const amount = event.detail?.amount || 0;
+        setUser({
+          ...user,
+          tokens: (user.tokens || 0) + amount
+        });
+        
+        console.log("Tokens updated:", user.tokens, "->", (user.tokens || 0) + amount);
+      }
+    };
+
+    // Đăng ký lắng nghe custom event
+    document.addEventListener('tokensAdded', handleTokensAdded as EventListener);
+
+    return () => {
+      document.removeEventListener('tokensAdded', handleTokensAdded as EventListener);
+    };
+  }, [user]);
+
   const login = async (): Promise<void> => {
     try {
       setIsLoading(true);
