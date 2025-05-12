@@ -6,12 +6,11 @@ import React, {
   ReactNode,
 } from "react";
 import { User } from "@/types";
-import { initializeTelegramApi } from "@/utils/telegramMock"; // Vẫn giữ phần khởi tạo API Telegram
+import { initializeTelegramApi } from "@/utils/telegramMock";
 import { getUser, saveUser } from "@/utils/storage";
 import { toast } from "@/hooks/use-toast";
 import {
   processDailyLogin,
-//   refreshDailyTasksIfNeeded,
 } from "@/utils/gamification";
 import { authApi, userApi } from "@/services/api";
 
@@ -34,7 +33,16 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
 
   useEffect(() => {
     // Initialize telegram API
-    initializeTelegramApi();
+    const telegram = initializeTelegramApi();
+    
+    // Nếu đang chạy trong Telegram, mở rộng web app
+    if (telegram?.WebApp) {
+      try {
+        telegram.WebApp.expand();
+      } catch (err) {
+        console.error("Error expanding Telegram WebApp:", err);
+      }
+    }
 
     // Kiểm tra nếu user đã đăng nhập dựa vào session hoặc local storage
     const checkAuth = async () => {
@@ -46,7 +54,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
         // Xử lý daily login rewards
         try {
           const { isFirstLogin, tokensAwarded, currentStreak } =
-            await processDailyLogin(); // Thêm await để đảm bảo xử lý đúng thứ tự
+            await processDailyLogin();
 
           if (isFirstLogin && tokensAwarded > 0) {
             toast({
@@ -54,8 +62,6 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
               description: `You received ${tokensAwarded} tokens for logging in today! Current streak: ${currentStreak} days.`,
             });
           }
-
-        //   refreshDailyTasksIfNeeded();
         } catch (err) {
           console.error("Error processing daily login:", err);
         }
@@ -66,6 +72,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
         const storedUser = getUser();
         if (storedUser) {
           setUser(storedUser);
+          // Nếu có user trong local storage, thử login lại
+          login().catch(e => console.error("Auto login failed:", e));
         }
       } finally {
         setIsLoading(false);
@@ -84,10 +92,12 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
       // Cập nhật user state với token mới
       if (user) {
         const amount = event.detail?.amount || 0;
-        setUser({
+        const newUser = {
           ...user,
           tokens: (user.tokens || 0) + amount
-        });
+        };
+        setUser(newUser);
+        saveUser(newUser); // Lưu lại vào local storage để giữ dữ liệu nhất quán
         
         console.log("Tokens updated:", user.tokens, "->", (user.tokens || 0) + amount);
       }
@@ -107,7 +117,6 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
       setError(null);
 
       // Trong ứng dụng Telegram thực tế, lấy thông tin user từ Telegram.WebApp.initDataUnsafe
-      // Hiện tại vẫn dùng mock để test
       const telegramWebApp = window.Telegram?.WebApp;
 
       // Nếu đang chạy trong môi trường Telegram thực tế
@@ -118,13 +127,16 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
       ) {
         const telegramUser = telegramWebApp.initDataUnsafe.user;
 
-        // Gọi API đăng nhập/đăng ký
+        // Gọi API đăng nhập/đăng ký với cả initData để backend xác thực
         const userData = await authApi.telegramLogin({
-          id: telegramUser.id,
-          username: telegramUser.username || `user${telegramUser.id}`,
-          first_name: telegramUser.first_name,
-          last_name: telegramUser.last_name,
-          photo_url: telegramUser.photo_url,
+          initData: telegramWebApp.initData, // Thêm initData để backend xác thực với Telegram
+          user: {
+            id: telegramUser.id,
+            username: telegramUser.username || `user${telegramUser.id}`,
+            first_name: telegramUser.first_name,
+            last_name: telegramUser.last_name,
+            photo_url: telegramUser.photo_url,
+          }
         });
 
         // Lưu thông tin user
@@ -139,10 +151,16 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
 
         // Gọi API đăng nhập/đăng ký với mock data
         try {
+          const mockWebApp = window.Telegram?.WebApp;
           const userData = await authApi.telegramLogin({
-            id: parseInt(loggedInUser._id || ""),
-            username: loggedInUser.username,
-            photo_url: loggedInUser.avatar,
+            initData: mockWebApp?.initData || "mock_init_data",
+            user: {
+              id: parseInt(loggedInUser._id || "0"),
+              username: loggedInUser.username,
+              first_name: mockWebApp?.initDataUnsafe?.user?.first_name || "Mock",
+              last_name: mockWebApp?.initDataUnsafe?.user?.last_name || "User",
+              photo_url: loggedInUser.avatar,
+            }
           });
 
           setUser(userData);
@@ -165,11 +183,11 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
         });
       }
 
-    //   refreshDailyTasksIfNeeded();
-
+      // Thông báo đăng nhập thành công
+      const displayName = user?.first_name || user?.username || "User";
       toast({
         title: "Login Successful",
-        description: `Welcome back, ${user?.first_name}!`,
+        description: `Welcome back, ${displayName}!`,
       });
     } catch (err) {
       const errorMessage =
@@ -186,14 +204,26 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
   };
 
   const logout = async (): Promise<void> => {
-    // Trong ứng dụng Telegram Mini App thực tế, không cần logout
-    // Nhưng bạn vẫn nên xóa session phía backend
-    setUser(null);
+    try {
+      // Gọi API logout nếu cần
+      // await authApi.logout();
+      
+      // Xóa dữ liệu user
+      setUser(null);
+      localStorage.removeItem('user'); // Xóa user từ local storage
 
-    toast({
-      title: "Logged Out",
-      description: "You have been logged out successfully.",
-    });
+      toast({
+        title: "Logged Out",
+        description: "You have been logged out successfully.",
+      });
+    } catch (err) {
+      console.error("Logout failed:", err);
+      toast({
+        title: "Logout Failed",
+        description: "Failed to logout properly.",
+        variant: "destructive",
+      });
+    }
   };
 
   return (

@@ -84,20 +84,22 @@ export const taskApi = {
 };
 
 export const authApi = {
-  // Đăng nhập qua Telegram
-  telegramLogin: async (telegramData: {
-    id: number;
-    username: string;
-    first_name?: string;
-    last_name?: string;
-    photo_url?: string;
+  // Sửa lại phương thức telegramLogin để hỗ trợ xác thực Telegram
+  telegramLogin: async (data: {
+    initData: string;
+    user: {
+      id: number;
+      username: string;
+      first_name?: string;
+      last_name?: string;
+      photo_url?: string;
+    }
   }) => {
-    const response = await api.post("/auth/telegram", { user: telegramData });
+    const response = await api.post("/auth/telegram", data);
     return response.data;
   },
 };
 
-// Các API liên quan đến người dùng
 export const userApi = {
   // Lấy thông tin người dùng hiện tại
   getProfile: async () => {

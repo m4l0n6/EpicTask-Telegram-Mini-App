@@ -260,7 +260,7 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
 
     const response = await taskApi.completeTask(taskId);
-    const { xpGained, tokenGained, leveledUp } = response;
+    const { xpGained, tokenGained, leveledUp, newBadges } = response;
 
     // Cập nhật state
     setTasks((prevTasks) =>
@@ -284,25 +284,22 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
       variant: "default",
     });
 
+    // Hiển thị thông báo về huy hiệu mới nếu có
+    if (newBadges && Array.isArray(newBadges) && newBadges.length > 0) {
+      // Thêm delay nhỏ để không hiển thị cùng lúc với toast trước đó
+      setTimeout(() => {
+        newBadges.forEach((badge) => {
+          toast({
+            title: "Badge Unlocked! 🎉",
+            description: `You've earned the "${badge.title}" badge!`,
+            variant: "default",
+          });
+        });
+      }, 500);
+    }
+
     // Làm mới huy hiệu để kiểm tra nếu đã mở khóa huy hiệu mới
     await refreshBadges();
-
-    // Hiển thị thông báo về huy hiệu mới nếu có
-    interface NewBadge {
-      title: string;
-      description: string;
-      icon: string;
-    }
-
-    if (response.newBadges && response.newBadges.length > 0) {
-      response.newBadges.forEach((badge: NewBadge) => {
-        toast({
-          title: "Badge Unlocked! 🎉",
-          description: `You've earned the "${badge.title}" badge!`,
-          variant: "default",
-        });
-      });
-    }
 
     // Tải lại danh sách nhiệm vụ để đồng bộ
     loadTasks();

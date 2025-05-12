@@ -2,13 +2,32 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Calendar, Flame, Gift } from 'lucide-react';
-import { format } from 'date-fns';
+import { useAuth } from "@/contexts/AuthContext";
+import { format, isToday } from 'date-fns';
 
 const LoginStreak: React.FC = () => {
+  const { user } = useAuth();
 
-  const formattedDate = format(new Date, 'MMM d, yyyy');
+  if (!user || !user.lastDailyLogin) {
+    return null;
+  }
+
+  const lastLogin = new Date(user.lastDailyLogin);
+  const formattedDate = format(lastLogin, "MMM d, yyyy");
+  const streak = user.dailyLoginStreak || 0;
+
+  // Determine the streak color class based on the streak count
+  const getStreakColorClass = () => {
+    if (streak >= 30) return "text-epic-purple";
+    if (streak >= 20) return "text-epic-blue";
+    if (streak >= 10) return "text-epic-green";
+    if (streak >= 5) return "text-epic-yellow";
+    return "text-orange-500";
+  };
+
+  // Check if last login was today
+  const loggedInToday = isToday(lastLogin);
   
- 
   return (
     <Card className="bg-gradient-to-r from-epic-purple/5 to-epic-blue/5 border-2 border-epic-purple/20">
       <CardHeader className="pb-2">
@@ -24,18 +43,20 @@ const LoginStreak: React.FC = () => {
               <Calendar className="mr-1 w-4 h-4 text-muted-foreground" />
               <span className="text-muted-foreground text-sm">Last Login</span>
             </div>
-            <p className="font-medium">{formattedDate}</p>
+            <p className="font-medium">
+              {loggedInToday ? "Today" : formattedDate}
+            </p>
           </div>
 
           <div className="text-center">
             <div className="flex justify-center items-center mb-1">
-              <Flame className={`h-4 w-4 mr-1 text-epic-purple`} />
+              <Flame className={`h-4 w-4 mr-1 ${getStreakColorClass()}`} />
               <span className="text-muted-foreground text-sm">
                 Current Streak
               </span>
             </div>
-            <p className={`text-xl font-bold text-epic-purple`}>
-              100 days
+            <p className={`text-xl font-bold ${getStreakColorClass()}`}>
+              {streak} {streak === 1 ? "day" : "days"} days
             </p>
           </div>
         </div>
