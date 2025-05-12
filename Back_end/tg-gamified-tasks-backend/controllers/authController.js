@@ -2,6 +2,29 @@ const User = require('../models/User');
 const LeaderboardService = require('../services/leaderboardService');  
 const { LOGIN_TOKEN_REWARD, STREAK_BONUS_MULTIPLIER } = require('../config/constants');
 const gamificationService = require('../services/gamificationService');
+const crypto = require('crypto');
+
+// Hàm xác thực data từ Telegram WebApp
+function validateTelegramWebAppData(initData, botToken) {
+  const data = new URLSearchParams(initData);
+  const dataToCheck = [...data.entries()]
+    .filter(([key]) => key !== 'hash')
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([key, value]) => `${key}=${value}`)
+    .join('\n');
+
+  const secretKey = crypto
+    .createHmac('sha256', 'WebAppData')
+    .update(botToken)
+    .digest();
+
+  const hash = crypto
+    .createHmac('sha256', secretKey)
+    .update(dataToCheck)
+    .digest('hex');
+
+  return hash === data.get('hash');
+}
 
 const telegramLoginOrRegister = async (req, res, next) => {
   console.log('\n--- [authController] Running telegramLoginOrRegister ---');
@@ -10,6 +33,11 @@ const telegramLoginOrRegister = async (req, res, next) => {
 
   if (!userData || !userData.id) {
     return res.status(400).json({ message: 'Missing Telegram user data.' });
+  }
+
+  // Thêm đoạn mã kiểm tra initData trước khi xử lý
+  if (!validateTelegramWebAppData(req.body.initData, process.env.TELEGRAM_BOT_TOKEN)) {
+    return res.status(401).json({ message: 'Invalid Telegram WebApp data' });
   }
 
   try {

@@ -1,6 +1,6 @@
-
 // Phương thức gửi thông báo về badge mới
 const notifyNewBadge = (io, userId, badge) => {
+  console.log(`[SocketService] Sending badge_unlocked event to user ${userId}:`, badge);
   io.to(`user-${userId}`).emit('badge_unlocked', { badge });
   console.log(`[SocketService] Sent badge_unlocked event to user ${userId}`);
 };

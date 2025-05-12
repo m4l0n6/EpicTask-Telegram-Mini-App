@@ -166,10 +166,22 @@ const completeTask = async (req, res, next) => {
     // Cộng XP cho người dùng
     const xpGained = task.xpReward || 10;
     const tokenGained = Math.ceil(xpGained * 0.2); // Tính token dựa trên XP (20%)
-    const { user, leveledUp } = await GamificationService.awardXp(ownerId, xpGained);
+    const { user, leveledUp } = await GamificationService.awardXp(ownerId, xpGained, io);
 
     // Cộng token cho người dùng
     await GamificationService.awardTokens(ownerId, tokenGained);
+
+    // Đếm số nhiệm vụ đã hoàn thành của user
+    const completedTaskCount = await Task.countDocuments({
+      owner: ownerId,
+      completed: true
+    });
+
+    // Bây giờ sử dụng completedTaskCount
+    const newBadges = await GamificationService.checkAndAwardBadges(ownerId, {
+      tasksCompleted: completedTaskCount,
+      level: user.level
+    }, io);
 
     if (io) {
       SocketService.notifyTaskUpdate(io, ownerId, task);
@@ -182,6 +194,7 @@ const completeTask = async (req, res, next) => {
       xpGained,
       tokenGained,
       leveledUp,
+      newBadges
     });
   } catch (error) {
     console.error('[taskController] Error completing task:', error);

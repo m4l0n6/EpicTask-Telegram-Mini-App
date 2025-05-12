@@ -65,13 +65,21 @@ export const SocketProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     });
 
     socketInstance.on('badge_unlocked', ({ badge }) => {
-      console.log('New badge unlocked:', badge);
+      console.log('New badge unlocked via socket:', badge);
+      
+      // Hiển thị toast ngay lập tức
       toast({
         title: "New Badge Unlocked! 🏆",
         description: `You've earned the "${badge.title}" badge!`,
         variant: "default",
       });
-      document.dispatchEvent(new CustomEvent('badgeUnlocked'));
+      
+      // Phát ra custom event với chi tiết badge để các context khác có thể sử dụng
+      document.dispatchEvent(
+        new CustomEvent('badgeUnlocked', { 
+          detail: { badge } 
+        })
+      );
     });
 
     socketInstance.on('task_updated', ({ task }) => {

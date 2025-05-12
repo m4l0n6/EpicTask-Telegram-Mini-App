@@ -69,15 +69,24 @@ const checkAndAwardBadges = async (userId, criteria) => {
             }
 
             if (eligible) {
-              console.log(
-                `[GamificationService] Awarding badge "${badge.title}" to ${userId}`
-              );
+              console.log(`[GamificationService] Awarding badge "${badge.title}" to ${userId}`);
               await UserBadge.create({ user: userId, badge: badge._id });
-              newlyAwardedBadges.push(badge);
-
+              
+              // Đảm bảo trả về đầy đủ thông tin badge
+              const badgeToReturn = {
+                _id: badge._id,
+                title: badge.title,
+                description: badge.description,
+                icon: badge.icon || "🏆",
+                milestoneType: badge.milestoneType,
+                milestoneValue: badge.milestoneValue
+              };
+              
+              newlyAwardedBadges.push(badgeToReturn);
+              
               // Thêm thông báo qua WebSocket nếu io được cung cấp
               if (io) {
-                SocketService.notifyNewBadge(io, userId, badge);
+                SocketService.notifyNewBadge(io, userId, badgeToReturn);
               }
             }
         }
