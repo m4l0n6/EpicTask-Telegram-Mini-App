@@ -1,21 +1,36 @@
 import axios from 'axios';
+import { getUser } from '../utils/storage';
+import { User } from '../types';
 
 // Lấy URL API từ biến môi trường hoặc mặc định
-const API_BASE_URL = import.meta.env.VITE_API_URL;
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://epictask-backend.onrender.com/api/v1';
 
-console.log('Using API URL:', API_BASE_URL); 
+console.log('Using API URL:', API_BASE_URL);
+
 
 const api = axios.create({
   baseURL: API_BASE_URL,
-  withCredentials: true, 
+  withCredentials: true,
   headers: {
     "Content-Type": "application/json",
   },
 });
 
-// Thêm interceptor để ghi log request URL (giúp debug)
+// Thêm interceptor để ghi log request URL và thêm header xác thực
 api.interceptors.request.use(config => {
   console.log(`Making ${config.method?.toUpperCase()} request to: ${config.baseURL}${config.url}`);
+  
+  const tg = window.Telegram?.WebApp;
+  if (tg) {
+    config.headers['Telegram-Data'] = tg.initData;
+  }
+  
+  // Thêm bất kỳ token trong bộ nhớ cache vào header
+  const cachedUser = getUser();
+  if (cachedUser?._id) {
+    config.headers['User-ID'] = cachedUser._id;
+  }
+  
   return config;
 });
 
@@ -24,9 +39,27 @@ api.interceptors.response.use(
   (response) => response,
   async (error) => {
     console.error('API Error:', error.response?.data || error.message);
+    
+    // Nếu lỗi 401, kiểm tra xem có thể xác thực lại không
+    if (error.response?.status === 401) {
+      console.log('Session expired or not found, checking local storage:', error);
+      // Các bước xử lý phiên hết hạn có thể thêm ở đây
+    }
+    
     return Promise.reject(error);
   }
 );
+
+interface TelegramAuthData {
+  initData: string;
+  user: {
+    id: number;
+    username: string;
+    first_name?: string;
+    last_name?: string;
+    photo_url?: string;
+  };
+}
 
 export const taskApi = {
   // Lấy tất cả task của người dùng hiện tại
@@ -84,27 +117,35 @@ export const taskApi = {
 };
 
 export const authApi = {
-  // Sửa lại phương thức telegramLogin để hỗ trợ xác thực Telegram
-  telegramLogin: async (data: {
-    initData: string;
-    user: {
-      id: number;
-      username: string;
-      first_name?: string;
-      last_name?: string;
-      photo_url?: string;
-    }
-  }) => {
+  // Đăng nhập qua Telegram
+  telegramLogin: async (data: TelegramAuthData): Promise<User> => {
     const response = await api.post("/auth/telegram", data);
+    return response.data;
+  },
+  
+  // Đăng xuất
+  logout: async (): Promise<void> => {
+    const response = await api.post("/auth/logout");
+    return response.data;
+  },
+
+  // Lấy thông tin profile
+  getProfile: async (): Promise<User> => {
+    const response = await api.get("/users/me");
     return response.data;
   },
 };
 
 export const userApi = {
-  // Lấy thông tin người dùng hiện tại
-  getProfile: async () => {
+  // Lấy thông tin profile
+  getProfile: async (): Promise<User> => {
     const response = await api.get("/users/me");
-    console.log("User Profile:", response.data); // Log thông tin người dùng
+    return response.data;
+  },
+  
+  // Cập nhật thông tin profile
+  updateProfile: async (data: Partial<User>): Promise<User> => {
+    const response = await api.patch("/users/me", data);
     return response.data;
   },
 
