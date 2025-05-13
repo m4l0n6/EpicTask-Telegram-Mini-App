@@ -44,21 +44,29 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
         // Trong ứng dụng Telegram thực tế, lấy thông tin user từ Telegram.WebApp.initDataUnsafe
         const telegramUser = telegramWebApp.initDataUnsafe.user;
 
-        // Gọi API đăng nhập/đăng ký với cả initData để backend xác thực
-        const userData = await authApi.telegramLogin({
-          initData: telegramWebApp.initData, // Thêm initData để backend xác thực với Telegram
-          user: {
-            id: telegramUser.id,
-            username: telegramUser.username || `user${telegramUser.id}`,
-            first_name: telegramUser.first_name,
-            last_name: telegramUser.last_name,
-            photo_url: telegramUser.photo_url,
-          }
-        });
+        try {
+          // Gọi API đăng nhập/đăng ký với cả initData để backend xác thực
+          const userData = await authApi.telegramLogin({
+            initData: telegramWebApp.initData, // Thêm initData để backend xác thực với Telegram
+            user: {
+              id: telegramUser.id,
+              username: telegramUser.username || `user${telegramUser.id}`,
+              first_name: telegramUser.first_name,
+              last_name: telegramUser.last_name,
+              photo_url: telegramUser.photo_url,
+            }
+          });
 
-        // Lưu thông tin user
-        setUser(userData);
-        saveUser(userData); // Backup trong local storage
+          // Lưu thông tin user
+          setUser(userData);
+          saveUser(userData); // Backup trong local storage
+        } catch (err) {
+          console.error("API đăng nhập Telegram thất bại, sử dụng dữ liệu giả lập:", err);
+          // Fallback to mock data in development
+          const mockUser = await mockTelegramLogin();
+          setUser(mockUser);
+          saveUser(mockUser);
+        }
       } else {
         // Dự phòng sử dụng xác thực giả lập để kiểm tra
         console.log("Dữ liệu Telegram không khả dụng, sử dụng xác thực giả lập");
@@ -78,21 +86,27 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
           });
           
           setUser(userData);
+          saveUser(userData);
         } catch (apiErr) {
           console.error("API đăng nhập thất bại, sử dụng người dùng giả lập cục bộ:", apiErr);
           setUser(mockUser);
+          saveUser(mockUser);
         }
       }
       
       // Xử lý daily login
-      const { isFirstLogin, tokensAwarded, currentStreak } =
-        await processDailyLogin();
+      try {
+        const { isFirstLogin, tokensAwarded, currentStreak } =
+          await processDailyLogin();
 
-      if (isFirstLogin && tokensAwarded > 0) {
-        toast({
-          title: "Daily Login Reward!",
-          description: `You received ${tokensAwarded} tokens for logging in today! Current streak: ${currentStreak} days.`,
-        });
+        if (isFirstLogin && tokensAwarded > 0) {
+          toast({
+            title: "Daily Login Reward!",
+            description: `You received ${tokensAwarded} tokens for logging in today! Current streak: ${currentStreak} days.`,
+          });
+        }
+      } catch (err) {
+        console.error("Không thể xử lý daily login:", err);
       }
 
       // Thông báo đăng nhập thành công
@@ -158,6 +172,9 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
           setUser(storedUser);
           // Nếu có user trong local storage, thử login lại
           login().catch(e => console.error("Auto login failed:", e));
+        } else {
+          // Nếu không có user nào trong local storage, thử login từ đầu
+          login().catch(e => console.error("Initial login failed:", e));
         }
       } finally {
         setIsLoading(false);

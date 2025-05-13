@@ -82,6 +82,10 @@ export const mockTelegramLogin = async (): Promise<User> => {
     dailyLoginStreak: 0,
     createdAt: new Date().toISOString(),
     lastLoginAt: new Date().toISOString(),
+    // Thêm các trường cần thiết cho Telegram
+    first_name: telegramUser.first_name,
+    last_name: telegramUser.last_name,
+    telegramId: telegramUser.id.toString(),
   };
 
   saveUser(newUser);

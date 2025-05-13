@@ -20,9 +20,15 @@ const api = axios.create({
 api.interceptors.request.use(config => {
   console.log(`Making ${config.method?.toUpperCase()} request to: ${config.baseURL}${config.url}`);
   
+  // Thêm dữ liệu Telegram vào header nếu có
   const tg = window.Telegram?.WebApp;
-  if (tg) {
+  if (tg && tg.initData) {
     config.headers['Telegram-Data'] = tg.initData;
+    
+    // Trong môi trường phát triển, thêm header để backend có thể nhận diện
+    if (import.meta.env.DEV) {
+      config.headers['X-Development-Mode'] = 'true';
+    }
   }
   
   // Thêm bất kỳ token trong bộ nhớ cache vào header
