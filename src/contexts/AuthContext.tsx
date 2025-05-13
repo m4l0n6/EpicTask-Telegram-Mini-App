@@ -6,7 +6,7 @@ import React, {
   ReactNode,
 } from "react";
 import { User } from "@/types";
-import { initializeTelegramApi } from "@/utils/telegramMock";
+import { initializeTelegramApi, mockTelegramLogin } from "@/utils/telegramMock";
 import { getUser, saveUser } from "@/utils/storage";
 import { toast } from "@/hooks/use-toast";
 import {
@@ -30,6 +30,90 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+
+  const login = async (): Promise<void> => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      
+      // Thử xác thực qua Telegram WebApp trước
+      const telegramWebApp = window.Telegram?.WebApp;
+      
+      if (telegramWebApp?.initDataUnsafe?.user) {
+        // Xác thực Telegram thật
+        // Trong ứng dụng Telegram thực tế, lấy thông tin user từ Telegram.WebApp.initDataUnsafe
+        const telegramUser = telegramWebApp.initDataUnsafe.user;
+
+        // Gọi API đăng nhập/đăng ký với cả initData để backend xác thực
+        const userData = await authApi.telegramLogin({
+          initData: telegramWebApp.initData, // Thêm initData để backend xác thực với Telegram
+          user: {
+            id: telegramUser.id,
+            username: telegramUser.username || `user${telegramUser.id}`,
+            first_name: telegramUser.first_name,
+            last_name: telegramUser.last_name,
+            photo_url: telegramUser.photo_url,
+          }
+        });
+
+        // Lưu thông tin user
+        setUser(userData);
+        saveUser(userData); // Backup trong local storage
+      } else {
+        // Dự phòng sử dụng xác thực giả lập để kiểm tra
+        console.log("Dữ liệu Telegram không khả dụng, sử dụng xác thực giả lập");
+        const mockUser = await mockTelegramLogin();
+        
+        try {
+          // Thử xác thực với backend sử dụng dữ liệu giả lập
+          const userData = await authApi.telegramLogin({
+            initData: "mock_init_data",
+            user: {
+              id: parseInt(mockUser._id || "123456789"),
+              username: mockUser.username || "test_user",
+              first_name: "Test",
+              last_name: "User", 
+              photo_url: mockUser.avatar || "",
+            }
+          });
+          
+          setUser(userData);
+        } catch (apiErr) {
+          console.error("API đăng nhập thất bại, sử dụng người dùng giả lập cục bộ:", apiErr);
+          setUser(mockUser);
+        }
+      }
+      
+      // Xử lý daily login
+      const { isFirstLogin, tokensAwarded, currentStreak } =
+        await processDailyLogin();
+
+      if (isFirstLogin && tokensAwarded > 0) {
+        toast({
+          title: "Daily Login Reward!",
+          description: `You received ${tokensAwarded} tokens for logging in today! Current streak: ${currentStreak} days.`,
+        });
+      }
+
+      // Thông báo đăng nhập thành công
+      const displayName = user?.first_name || user?.username || "User";
+      toast({
+        title: "Login Successful",
+        description: `Welcome back, ${displayName}!`,
+      });
+    } catch (err) {
+      const errorMessage =
+        err instanceof Error ? err.message : "Failed to login";
+      setError(errorMessage);
+      toast({
+        title: "Login Failed",
+        description: errorMessage,
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   useEffect(() => {
     // Initialize telegram API
@@ -81,7 +165,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
     };
 
     checkAuth();
-  }, []);
+  }, [login]);
 
   // Thêm useEffect để lắng nghe sự kiện tokens_added từ socket hoặc qua event system
   useEffect(() => {
@@ -111,97 +195,12 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
     };
   }, [user]);
 
-  const login = async (): Promise<void> => {
-    try {
-      setIsLoading(true);
-      setError(null);
-
-      // Trong ứng dụng Telegram thực tế, lấy thông tin user từ Telegram.WebApp.initDataUnsafe
-      const telegramWebApp = window.Telegram?.WebApp;
-
-      // Nếu đang chạy trong môi trường Telegram thực tế
-      if (
-        telegramWebApp &&
-        telegramWebApp.initDataUnsafe &&
-        telegramWebApp.initDataUnsafe.user
-      ) {
-        const telegramUser = telegramWebApp.initDataUnsafe.user;
-
-        // Gọi API đăng nhập/đăng ký với cả initData để backend xác thực
-        const userData = await authApi.telegramLogin({
-          initData: telegramWebApp.initData, // Thêm initData để backend xác thực với Telegram
-          user: {
-            id: telegramUser.id,
-            username: telegramUser.username || `user${telegramUser.id}`,
-            first_name: telegramUser.first_name,
-            last_name: telegramUser.last_name,
-            photo_url: telegramUser.photo_url,
-          }
-        });
-
-        // Lưu thông tin user
-        setUser(userData);
-        saveUser(userData); // Backup trong local storage
-      } else {
-        // Fallback cho development - sử dụng mock data
-        console.warn("Using mock Telegram login for development");
-        const mockTelegramLogin = (await import("@/utils/telegramMock"))
-          .mockTelegramLogin;
-        const loggedInUser = await mockTelegramLogin();
-
-        // Gọi API đăng nhập/đăng ký với mock data
-        try {
-          const mockWebApp = window.Telegram?.WebApp;
-          const userData = await authApi.telegramLogin({
-            initData: mockWebApp?.initData || "mock_init_data",
-            user: {
-              id: parseInt(loggedInUser._id || "0"),
-              username: loggedInUser.username,
-              first_name: mockWebApp?.initDataUnsafe?.user?.first_name || "Mock",
-              last_name: mockWebApp?.initDataUnsafe?.user?.last_name || "User",
-              photo_url: loggedInUser.avatar,
-            }
-          });
-
-          setUser(userData);
-          saveUser(userData);
-        } catch (apiErr) {
-          console.error("API login failed, using mock user:", apiErr);
-          setUser(loggedInUser);
-          saveUser(loggedInUser);
-        }
-      }
-
-      // Xử lý daily login
-      const { isFirstLogin, tokensAwarded, currentStreak } =
-        await processDailyLogin();
-
-      if (isFirstLogin && tokensAwarded > 0) {
-        toast({
-          title: "Daily Login Reward!",
-          description: `You received ${tokensAwarded} tokens for logging in today! Current streak: ${currentStreak} days.`,
-        });
-      }
-
-      // Thông báo đăng nhập thành công
-      const displayName = user?.first_name || user?.username || "User";
-      toast({
-        title: "Login Successful",
-        description: `Welcome back, ${displayName}!`,
-      });
-    } catch (err) {
-      const errorMessage =
-        err instanceof Error ? err.message : "Failed to login";
-      setError(errorMessage);
-      toast({
-        title: "Login Failed",
-        description: errorMessage,
-        variant: "destructive",
-      });
-    } finally {
-      setIsLoading(false);
+  useEffect(() => {
+    // Tự động kích hoạt đăng nhập nếu chưa đăng nhập
+    if (!user && !isLoading) {
+      login();
     }
-  };
+  }, [user, isLoading, login]);
 
   const logout = async (): Promise<void> => {
     try {
@@ -233,6 +232,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
   );
 };
 
+// eslint-disable-next-line react-refresh/only-export-components
 export const useAuth = (): AuthContextType => {
   const context = useContext(AuthContext);
   if (context === undefined) {
