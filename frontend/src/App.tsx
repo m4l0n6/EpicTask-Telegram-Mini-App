@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { Toaster } from "@/components/ui/toaster";
 import AppLayout from "./components/layout/AppLayout";
 import HomePage from "./pages/HomePage";
+import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import ProfilePage from "./pages/ProfilePage";
 import DailyPage from "./pages/DailyPage";
@@ -29,7 +30,8 @@ const App = () => (
                 <Toaster />
                 <Routes>
                   <Route path="/" element={<AppLayout />}>
-                    <Route index element={<HomePage />} />
+                    <Route index element={<Index />} />
+                    <Route path="home" element={<HomePage />} />
                     <Route path="tasks" element={<TasksPage />} />
                     <Route path="badges" element={<BadgesPage />} />
                     <Route path="leaderboard" element={<LeaderboardPage />} />

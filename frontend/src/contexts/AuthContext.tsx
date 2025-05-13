@@ -4,6 +4,7 @@ import React, {
   useState,
   useEffect,
   ReactNode,
+  useRef,
 } from "react";
 import { User } from "@/types";
 import { initializeTelegramApi, mockTelegramLogin } from "@/utils/telegramMock";
@@ -30,7 +31,6 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
-
   const login = async (): Promise<void> => {
     try {
       setIsLoading(true);
@@ -61,36 +61,50 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
           setUser(userData);
           saveUser(userData); // Backup trong local storage
         } catch (err) {
-          console.error("API đăng nhập Telegram thất bại, sử dụng dữ liệu giả lập:", err);
-          // Fallback to mock data in development
-          const mockUser = await mockTelegramLogin();
-          setUser(mockUser);
-          saveUser(mockUser);
+          // Chỉ sử dụng mock data trong môi trường phát triển
+          if (import.meta.env.DEV) {
+            console.error("API đăng nhập Telegram thất bại, sử dụng dữ liệu giả lập:", err);
+            // Fallback to mock data in development
+            const mockUser = await mockTelegramLogin();
+            setUser(mockUser);
+            saveUser(mockUser);
+          } else {
+            // Trong môi trường sản phẩm, hiển thị lỗi
+            console.error("API đăng nhập Telegram thất bại:", err);
+            throw err;
+          }
         }
       } else {
-        // Dự phòng sử dụng xác thực giả lập để kiểm tra
-        console.log("Dữ liệu Telegram không khả dụng, sử dụng xác thực giả lập");
-        const mockUser = await mockTelegramLogin();
-        
-        try {
-          // Thử xác thực với backend sử dụng dữ liệu giả lập
-          const userData = await authApi.telegramLogin({
-            initData: "mock_init_data",
-            user: {
-              id: parseInt(mockUser._id || "123456789"),
-              username: mockUser.username || "test_user",
-              first_name: "Test",
-              last_name: "User", 
-              photo_url: mockUser.avatar || "",
-            }
-          });
+        // Chỉ sử dụng mock data trong môi trường phát triển
+        if (import.meta.env.DEV) {
+          console.log("Dữ liệu Telegram không khả dụng, sử dụng xác thực giả lập");
+          const mockUser = await mockTelegramLogin();
           
-          setUser(userData);
-          saveUser(userData);
-        } catch (apiErr) {
-          console.error("API đăng nhập thất bại, sử dụng người dùng giả lập cục bộ:", apiErr);
-          setUser(mockUser);
-          saveUser(mockUser);
+          try {
+            // Thử xác thực với backend sử dụng dữ liệu giả lập
+            const userData = await authApi.telegramLogin({
+              initData: "mock_init_data",
+              user: {
+                id: parseInt(mockUser._id || "123456789"),
+                username: mockUser.username || "test_user",
+                first_name: "Test",
+                last_name: "User", 
+                photo_url: mockUser.avatar || "",
+              }
+            });
+            
+            setUser(userData);
+            saveUser(userData);
+          } catch (apiErr) {
+            console.error("API đăng nhập thất bại, sử dụng người dùng giả lập cục bộ:", apiErr);
+            setUser(mockUser);
+            saveUser(mockUser);
+          }
+        } else {
+          // Trong môi trường sản phẩm, hiển thị lỗi
+          const error = new Error("Không thể lấy dữ liệu từ Telegram WebApp");
+          console.error(error);
+          throw error;
         }
       }
       
@@ -128,15 +142,19 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
       setIsLoading(false);
     }
   };
-
   useEffect(() => {
-    // Initialize telegram API
-    const telegram = initializeTelegramApi();
+    // Khởi tạo Telegram API chỉ nếu cần
+    // Nếu trong Telegram, không cần khởi tạo mock
+    const telegram = window.Telegram?.WebApp ? window.Telegram : initializeTelegramApi();
+    
+    // Biến flag để đảm bảo không gọi login nhiều lần
+    let isMounted = true;
     
     // Nếu đang chạy trong Telegram, mở rộng web app
     if (telegram?.WebApp) {
       try {
         telegram.WebApp.expand();
+        console.log("Expanded Telegram WebApp successfully");
       } catch (err) {
         console.error("Error expanding Telegram WebApp:", err);
       }
@@ -144,44 +162,58 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
 
     // Kiểm tra nếu user đã đăng nhập dựa vào session hoặc local storage
     const checkAuth = async () => {
+      if (!isMounted) return;
+      
       try {
         // Kiểm tra xem đã có session với backend chưa
         const profile = await userApi.getProfile();
-        setUser(profile);
+        if (isMounted) {
+          setUser(profile);
+          
+          // Xử lý daily login rewards
+          try {
+            const { isFirstLogin, tokensAwarded, currentStreak } =
+              await processDailyLogin();
 
-        // Xử lý daily login rewards
-        try {
-          const { isFirstLogin, tokensAwarded, currentStreak } =
-            await processDailyLogin();
-
-          if (isFirstLogin && tokensAwarded > 0) {
-            toast({
-              title: "Daily Login Reward!",
-              description: `You received ${tokensAwarded} tokens for logging in today! Current streak: ${currentStreak} days.`,
-            });
+            if (isFirstLogin && tokensAwarded > 0) {
+              toast({
+                title: "Daily Login Reward!",
+                description: `You received ${tokensAwarded} tokens for logging in today! Current streak: ${currentStreak} days.`,
+              });
+            }
+          } catch (err) {
+            console.error("Error processing daily login:", err);
           }
-        } catch (err) {
-          console.error("Error processing daily login:", err);
         }
       } catch (err) {
         // Không có session hoặc session hết hạn
-        // Kiểm tra local storage để fallback
+        if (!isMounted) return;
+        
         console.error("Session expired or not found, checking local storage:", err);
         const storedUser = getUser();
         if (storedUser) {
           setUser(storedUser);
-          // Nếu có user trong local storage, thử login lại
-          login().catch(e => console.error("Auto login failed:", e));
-        } else {
-          // Nếu không có user nào trong local storage, thử login từ đầu
+          // Chỉ thực hiện login() nếu cần thiết và component vẫn mounted
+          if (isMounted) {
+            login().catch(e => console.error("Auto login failed:", e));
+          }
+        } else if (isMounted) {
+          // Chỉ thực hiện login() nếu cần thiết và component vẫn mounted
           login().catch(e => console.error("Initial login failed:", e));
         }
       } finally {
-        setIsLoading(false);
+        if (isMounted) {
+          setIsLoading(false);
+        }
       }
     };
 
     checkAuth();
+    
+    // Cleanup function để tránh memory leaks và update states sau khi unmount
+    return () => {
+      isMounted = false;
+    };
   }, [login]);
 
   // Thêm useEffect để lắng nghe sự kiện tokens_added từ socket hoặc qua event system
@@ -210,12 +242,15 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
     return () => {
       document.removeEventListener('tokensAdded', handleTokensAdded as EventListener);
     };
-  }, [user]);
-
+  }, [user]);  // Effect này tránh vòng lặp vô hạn bằng cách sử dụng ref
+  const loginAttemptedRef = useRef(false);
+  
   useEffect(() => {
-    // Tự động kích hoạt đăng nhập nếu chưa đăng nhập
-    if (!user && !isLoading) {
-      login();
+    // Chỉ thực hiện đăng nhập tự động một lần khi component được mount
+    // và khi user chưa đăng nhập và không đang loading
+    if (!user && !isLoading && !loginAttemptedRef.current) {
+      loginAttemptedRef.current = true;
+      login().catch(e => console.error("Auto login attempt failed:", e));
     }
   }, [user, isLoading, login]);
 
