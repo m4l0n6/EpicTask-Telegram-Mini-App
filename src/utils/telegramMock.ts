@@ -182,11 +182,19 @@ export const createMockUsers = () => {
 
 // Định nghĩa API
 export const initializeTelegramApi = () => {
-  // In a real app, we would connect to the Telegram Mini App SDK here
-  // For now, we'll just attach our mock to the window
-  window.Telegram = {
-    WebApp: mockTelegramWebApp,
-  };
+  // Nếu Telegram WebApp đã được khởi tạo, không ghi đè nó
+  if (window.Telegram?.WebApp) {
+    console.log("Sử dụng Telegram WebApp thật đã được khởi tạo");
+    return window.Telegram;
+  }
+
+  // Chỉ sử dụng mock trong môi trường phát triển
+  if (import.meta.env.DEV) {
+    console.log("Sử dụng Telegram WebApp giả lập cho phát triển");
+    window.Telegram = {
+      WebApp: mockTelegramWebApp,
+    };
+  }
 
   return window.Telegram;
 };
