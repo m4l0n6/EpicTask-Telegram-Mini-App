@@ -545,7 +545,7 @@ const Index: React.FC = () => {
               onClick={() => taskToConfirm && handleCompleteTask(taskToConfirm)}
               disabled={completingTaskId !== null}
             >
-              {completingTaskId ? "Completing..." : "Yes, Complete It"}
+              {completingTaskId ? "Completing ..." : "Yes, Complete It"}
             </Button>
           </DialogFooter>
         </DialogContent>
