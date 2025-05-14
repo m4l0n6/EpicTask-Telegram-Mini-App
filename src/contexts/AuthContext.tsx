@@ -5,9 +5,10 @@ import React, {
   useEffect,
   ReactNode,
   useRef,
+  useCallback,
 } from "react";
 import { User } from "@/types";
-import { initializeTelegramApi, mockTelegramLogin } from "@/utils/telegramMock";
+import { initializeTelegramApi } from "@/utils/telegramMock";
 import { getUser, saveUser } from "@/utils/storage";
 import { toast } from "@/hooks/use-toast";
 import {
@@ -31,114 +32,95 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
-  const login = async (): Promise<void> => {
+  const login = useCallback(async (): Promise<void> => {
     try {
       setIsLoading(true);
       setError(null);
-      
-      // Thử xác thực qua Telegram WebApp trước
+
+      // Thử xác thực qua Telegram WebApp
       const telegramWebApp = window.Telegram?.WebApp;
       
       if (telegramWebApp?.initDataUnsafe?.user) {
-        // Xác thực Telegram thật
-        // Trong ứng dụng Telegram thực tế, lấy thông tin user từ Telegram.WebApp.initDataUnsafe
-        const telegramUser = telegramWebApp.initDataUnsafe.user;
-
         try {
-          // Gọi API đăng nhập/đăng ký với cả initData để backend xác thực
+          // Gọi API đăng nhập với dữ liệu Telegram
           const userData = await authApi.telegramLogin({
-            initData: telegramWebApp.initData, // Thêm initData để backend xác thực với Telegram
+            initData: telegramWebApp.initData,
             user: {
-              id: telegramUser.id,
-              username: telegramUser.username || `user${telegramUser.id}`,
-              first_name: telegramUser.first_name,
-              last_name: telegramUser.last_name,
-              photo_url: telegramUser.photo_url,
+              id: telegramWebApp.initDataUnsafe.user.id,
+              username: telegramWebApp.initDataUnsafe.user.username || `user${telegramWebApp.initDataUnsafe.user.id}`,
+              first_name: telegramWebApp.initDataUnsafe.user.first_name,
+              last_name: telegramWebApp.initDataUnsafe.user.last_name,
+              photo_url: telegramWebApp.initDataUnsafe.user.photo_url,
             }
           });
-
-          // Lưu thông tin user
+          
           setUser(userData);
-          saveUser(userData); // Backup trong local storage
+          saveUser(userData);
         } catch (err) {
-          // Chỉ sử dụng mock data trong môi trường phát triển
+          console.error("API đăng nhập Telegram thất bại:", err);
+          
+          // Trong môi trường phát triển, dùng dữ liệu giả lập
           if (import.meta.env.DEV) {
-            console.error("API đăng nhập Telegram thất bại, sử dụng dữ liệu giả lập:", err);
-            // Fallback to mock data in development
-            const mockUser = await mockTelegramLogin();
-            setUser(mockUser);
-            saveUser(mockUser);
+            console.log("DEV mode: Using mock user data");
+            const storedUser = getUser();
+            if (storedUser) {
+              setUser(storedUser);
+            } else {
+              // Tạo user giả với đầy đủ thuộc tính
+              const mockUser = {
+                _id: "dev_user_id",
+                username: "dev_user",
+                telegramId: "123456789",
+                xp: 100,
+                level: 1,
+                tokens: 20,
+                avatar: "https://via.placeholder.com/150",
+                badges: [],
+                completedTasks: 0,
+                createdAt: new Date().toISOString(),
+                lastLoginAt: new Date().toISOString(),
+              };
+              setUser(mockUser);
+              saveUser(mockUser);
+            }
           } else {
-            // Trong môi trường sản phẩm, hiển thị lỗi
-            console.error("API đăng nhập Telegram thất bại:", err);
             throw err;
           }
         }
-      } else {
-        // Chỉ sử dụng mock data trong môi trường phát triển
-        if (import.meta.env.DEV) {
-          console.log("Dữ liệu Telegram không khả dụng, sử dụng xác thực giả lập");
-          const mockUser = await mockTelegramLogin();
-          
-          try {
-            // Thử xác thực với backend sử dụng dữ liệu giả lập
-            const userData = await authApi.telegramLogin({
-              initData: "mock_init_data",
-              user: {
-                id: parseInt(mockUser._id || "123456789"),
-                username: mockUser.username || "test_user",
-                first_name: "Test",
-                last_name: "User", 
-                photo_url: mockUser.avatar || "",
-              }
-            });
-            
-            setUser(userData);
-            saveUser(userData);
-          } catch (apiErr) {
-            console.error("API đăng nhập thất bại, sử dụng người dùng giả lập cục bộ:", apiErr);
-            setUser(mockUser);
-            saveUser(mockUser);
-          }
+      } else if (import.meta.env.DEV) {
+        // Trong môi trường phát triển mà không có Telegram WebApp
+        console.log("DEV mode without Telegram data: Using mock user");
+        const storedUser = getUser();
+        if (storedUser) {
+          setUser(storedUser);
         } else {
-          // Trong môi trường sản phẩm, hiển thị lỗi
-          const error = new Error("Cannot authenticate with Telegram");
-          console.error(error);
-          throw error;
+          // Tạo user giả với đầy đủ thuộc tính
+          const mockUser = {
+            _id: "dev_user_id",
+            username: "dev_user",
+            telegramId: "123456789",
+            xp: 100,
+            level: 1,
+            tokens: 20,
+            avatar: "https://via.placeholder.com/150",
+            badges: [],
+            completedTasks: 0,
+            createdAt: new Date().toISOString(),
+            lastLoginAt: new Date().toISOString(),
+          };
+          setUser(mockUser);
+          saveUser(mockUser);
         }
+      } else {
+        throw new Error("Telegram WebApp data not available");
       }
-      
-      // Xử lý daily login
-      try {
-        const { isFirstLogin, tokensAwarded } = await processDailyLogin();
-        if (isFirstLogin && tokensAwarded > 0) {
-          toast({
-            title: "Daily Login Reward!",
-            description: `You received ${tokensAwarded} tokens for logging in today!`,
-          });
-        }
-      } catch (err) {
-        console.error("Cannot hanlde daily login:", err);
-      }
-
-      // Thông báo đăng nhập thành công
-      toast({
-        title: "Login Successful",
-        description: `Welcome back, ${user?.first_name || user?.username || "User"}!`, // Ưu tiên first_name
-      });
-    } catch (err) {
-      const errorMessage =
-        err instanceof Error ? err.message : "Failed to login";
-      setError(errorMessage);
-      toast({
-        title: "Login Failed",
-        description: errorMessage,
-        variant: "destructive",
-      });
+    } catch (error) {
+      console.error("Login error:", error);
+      setError("Authentication failed.");
     } finally {
       setIsLoading(false);
     }
-  };
+  }, []);
   useEffect(() => {
     // Khởi tạo Telegram API chỉ nếu cần
     // Nếu trong Telegram, không cần khởi tạo mock
@@ -286,14 +268,47 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
     }
   };
 
+  // Định nghĩa ref cho biến theo dõi số lần kết nối lại và websocket
+  const retryCountRef = useRef(0);
+  const websocketRef = useRef<WebSocket | null>(null);
+
   const connectWebSocket = () => {
-    const socket = new WebSocket("wss://epictask-backend.onrender.com");
-    socket.onopen = () => console.log("WebSocket connected");
-    socket.onclose = () => {
-      console.log("WebSocket disconnected, retrying...");
-      setTimeout(connectWebSocket, 5000); // Thử lại sau 5 giây
-    };
+    // Không kết nối WebSocket trong môi trường phát triển
+    if (import.meta.env.DEV && !import.meta.env.VITE_ENABLE_WEBSOCKET) {
+      console.log("WebSocket disabled in development mode");
+      return;
+    }
+    
+    try {
+      const socket = new WebSocket("wss://epictask-backend.onrender.com");
+      
+      socket.onopen = () => {
+        console.log("WebSocket connected");
+        websocketRef.current = socket;
+      };
+      
+      socket.onclose = () => {
+        console.log("WebSocket disconnected");
+        websocketRef.current = null;
+        
+        // Giới hạn số lần thử kết nối lại
+        if (retryCountRef.current < 3) {
+          console.log(`Retrying WebSocket connection (${retryCountRef.current + 1}/3)...`);
+          retryCountRef.current++;
+          setTimeout(connectWebSocket, 5000); // Thử lại sau 5 giây
+        } else {
+          console.log("Max WebSocket retry attempts reached");
+        }
+      };
+      
+      socket.onerror = (error) => {
+        console.error("WebSocket error:", error);
+      };
+    } catch (error) {
+      console.error("Failed to create WebSocket connection:", error);
+    }
   };
+
   connectWebSocket();
 
   useEffect(() => {

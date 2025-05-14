@@ -31,7 +31,7 @@ api.interceptors.request.use(config => {
     config.headers["Authorization"] = `Bearer ${token}`;
   }
   
-  // Trong môi trường phát triển, thêm header để backend có thể nhận diện
+  // Thêm header cho môi trường phát triển
   if (import.meta.env.DEV) {
     config.headers['X-Development-Mode'] = 'true';
   }
@@ -59,30 +59,21 @@ api.interceptors.response.use(
     
     const originalRequest = error.config;
     
-    // Kiểm tra nếu lỗi 401 và chưa thử refresh
-    if (error.response.status === 401 && !originalRequest._retry) {
-      // Ngăn nhiều request cùng thử refresh token
-      if (authState.isAuthenticating) {
-        // Đợi quá trình xác thực hiện tại hoàn thành
-        await new Promise(resolve => {
-          const checkAuth = () => {
-            if (!authState.isAuthenticating) {
-              resolve(true);
-            } else {
-              setTimeout(checkAuth, 200);
-            }
-          };
-          checkAuth();
-        });
-        
-        // Nếu đã xác thực thành công, thử lại request
-        const token = localStorage.getItem("authToken");
-        if (token) {
-          originalRequest.headers["Authorization"] = `Bearer ${token}`;
-          return api(originalRequest);
-        }
-      }
+    // Đặc biệt cho môi trường phát triển khi gặp lỗi 401
+    if (error.response.status === 401 && import.meta.env.DEV) {
+      console.log("Development mode: Using local storage data instead of authentication");
+      const storedUser = localStorage.getItem('user');
       
+      if (storedUser && !originalRequest.url.includes('/auth/')) {
+        // Sử dụng dữ liệu giả lập trong môi trường phát triển
+        return Promise.resolve({ 
+          data: JSON.parse(storedUser)
+        });
+      }
+    }
+    
+    // Xử lý token hết hạn
+    if (error.response.status === 401 && !originalRequest._retry) {
       // Giới hạn số lần thử lại
       if (authState.authRetryCount >= authState.maxRetries) {
         console.log("Đã vượt quá số lần thử lại xác thực tối đa");
