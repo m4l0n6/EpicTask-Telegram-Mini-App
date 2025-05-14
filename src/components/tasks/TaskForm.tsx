@@ -31,13 +31,12 @@ const taskFormSchema = z.object({
   title: z.string().min(1, "Title is required").max(100, "Title is too long"),
   description: z.string().max(500, "Description is too long"),
   deadline: z
-    .date({
-      required_error: "Deadline is required",
-    })
+    .date()
     .min(
       new Date(new Date().setHours(0, 0, 0, 0)),
       "Deadline must be in the future"
-    ),
+    )
+    .optional(),
   xpReward: z.coerce
     .number({ required_error: "XP reward is required" })
     .min(1, "Minimum XP reward is 1")
@@ -143,11 +142,10 @@ const TaskForm: React.FC<TaskFormProps> = ({
                     </Button>
                   </FormControl>
                 </PopoverTrigger>
-                <PopoverContent className="p-0 w-auto" align="start">
-                  <Calendar
+                <PopoverContent className="p-0 w-auto" align="start">                <Calendar
                     mode="single"
                     selected={field.value ?? undefined}
-                    onSelect={field.onChange}
+                    onSelect={(date) => field.onChange(date)}
                     disabled={(date) =>
                       date < new Date(new Date().setHours(0, 0, 0, 0))
                     }
