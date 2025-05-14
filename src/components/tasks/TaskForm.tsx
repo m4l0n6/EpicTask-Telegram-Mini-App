@@ -142,7 +142,8 @@ const TaskForm: React.FC<TaskFormProps> = ({
                     </Button>
                   </FormControl>
                 </PopoverTrigger>
-                <PopoverContent className="p-0 w-auto" align="start">                <Calendar
+                <PopoverContent className="p-0 w-auto" align="start">               
+                   <Calendar
                     mode="single"
                     selected={field.value ?? undefined}
                     onSelect={(date) => field.onChange(date)}
