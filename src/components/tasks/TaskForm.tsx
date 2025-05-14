@@ -180,12 +180,6 @@ const TaskForm: React.FC<TaskFormProps> = ({
           )}
         />
 
-        {/* {!task && (
-          <FormDescription>
-            You've created {tasksToday}/10 tasks today
-          </FormDescription>
-        )} */}
-
         <div className="flex justify-end gap-2">
           <Button type="button" variant="outline" onClick={onCancel} disabled={isSubmitting}>
             Cancel

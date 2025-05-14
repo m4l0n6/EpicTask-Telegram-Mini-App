@@ -240,16 +240,17 @@ const Index: React.FC = () => {
             <DialogHeader>
               <DialogTitle>Create a New Task</DialogTitle>
             </DialogHeader>
-            <TaskForm 
+            <TaskForm
               onSubmit={(values) => {
                 handleAddTask({
                   title: values.title,
                   description: values.description,
                   deadline: values.deadline,
-                  xpReward: values.xpReward
+                  xpReward: values.xpReward,
                 });
               }}
               onCancel={() => setIsCreateDialogOpen(false)}
+              isSubmitting={isSubmitting}
             />
           </DialogContent>
         </Dialog>
