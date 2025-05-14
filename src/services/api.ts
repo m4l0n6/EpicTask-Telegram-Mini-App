@@ -7,7 +7,6 @@ const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://epictask-backend.o
 
 console.log('Using API URL:', API_BASE_URL);
 
-
 const api = axios.create({
   baseURL: API_BASE_URL,
   withCredentials: true,
@@ -40,6 +39,22 @@ api.interceptors.request.use(config => {
   return config;
 });
 
+api.interceptors.request.use(config => {
+  const cachedUser = getUser();
+  if (cachedUser?.tokens) {
+    config.headers['Authorization'] = `Bearer ${cachedUser.tokens}`;
+  }
+  return config;
+});
+
+api.interceptors.request.use((config) => {
+  const tg = window.Telegram?.WebApp;
+  if (tg && tg.initData) {
+    config.headers['Telegram-Data'] = tg.initData; // Đảm bảo gửi dữ liệu Telegram
+  }
+  return config;
+});
+
 // Xử lý lỗi chung và refresh token
 api.interceptors.response.use(
   (response) => response,
@@ -52,6 +67,17 @@ api.interceptors.response.use(
       // Các bước xử lý phiên hết hạn có thể thêm ở đây
     }
     
+    return Promise.reject(error);
+  }
+);
+
+api.interceptors.response.use(
+  response => response,
+  async error => {
+    if (error.response?.status === 401) {
+      console.log("Session expired, attempting to refresh token...");
+      // Logic làm mới token ở đây
+    }
     return Promise.reject(error);
   }
 );

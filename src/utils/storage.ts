@@ -13,20 +13,9 @@ const STORAGE_KEYS = {
 // Các hàm lưu trữ và lấy dữ liệu của người dùng
 // Lưu người dùng 
 export const saveUser = (user: User): void => {
-    localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(user)); 
-
-    //Cập nhật người dùng này vào danh sách người dùng cho bảng xếp hạng
-    const users = getUsers();
-    const existingUserIndex = users.findIndex(u => u._id === user._id); // Tìm chỉ số của người dùng hiện tại trong danh sách người dùng
-    if (existingUserIndex >= 0) {
-        users[existingUserIndex] = user; // Cập nhật thông tin người dùng
-    }
-    else {
-        users.push(user); // Thêm người dùng mới vào danh sách
-    }
-
-    localStorage.setItem(STORAGE_KEYS.USERS, JSON.stringify(users)); // Lưu danh sách người dùng vào localStorage
-}
+  const displayName = user.first_name || user.username || "User"; // Ưu tiên first_name
+  localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify({ ...user, displayName }));
+};
 
 // Lấy người dùng 
 export const getUser = (): User | null => {

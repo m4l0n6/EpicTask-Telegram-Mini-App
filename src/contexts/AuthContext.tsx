@@ -102,7 +102,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
           }
         } else {
           // Trong môi trường sản phẩm, hiển thị lỗi
-          const error = new Error("Không thể lấy dữ liệu từ Telegram WebApp");
+          const error = new Error("Cannot authenticate with Telegram");
           console.error(error);
           throw error;
         }
@@ -124,10 +124,9 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
       }
 
       // Thông báo đăng nhập thành công
-      const displayName = user?.first_name || user?.username || "User";
       toast({
         title: "Login Successful",
-        description: `Welcome back, ${displayName}!`,
+        description: `Welcome back, ${user?.first_name || user?.username || "User"}!`, // Ưu tiên first_name
       });
     } catch (err) {
       const errorMessage =
@@ -253,6 +252,20 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
       login().catch(e => console.error("Auto login attempt failed:", e));
     }
   }, [user, isLoading, login]);
+
+  useEffect(() => {
+    const telegram = window.Telegram?.WebApp;
+    if (!telegram || !telegram.initData) {
+      console.error("Telegram WebApp is not initialized or missing initData");
+      return;
+    }
+  
+    try {
+      telegram.expand();
+    } catch (err) {
+      console.error("Error expanding Telegram WebApp:", err);
+    }
+  }, []);
 
   const logout = async (): Promise<void> => {
     try {
