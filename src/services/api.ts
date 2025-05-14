@@ -1,5 +1,4 @@
 import axios from 'axios';
-import { getUser } from '../utils/storage';
 import { User } from '../types';
 
 // Lấy URL API từ biến môi trường hoặc mặc định
@@ -23,71 +22,140 @@ api.interceptors.request.use(config => {
   const tg = window.Telegram?.WebApp;
   if (tg && tg.initData) {
     config.headers['Telegram-Data'] = tg.initData;
-    
-    // Trong môi trường phát triển, thêm header để backend có thể nhận diện
-    if (import.meta.env.DEV) {
-      config.headers['X-Development-Mode'] = 'true';
-    }
   }
   
-  // Thêm bất kỳ token trong bộ nhớ cache vào header
-  const cachedUser = getUser();
-  if (cachedUser?._id) {
-    config.headers['User-ID'] = cachedUser._id;
+  // Thêm token xác thực
+  const token = localStorage.getItem("authToken");
+  if (token) {
+    config.headers["Authorization"] = `Bearer ${token}`;
+  }
+  
+  // Trong môi trường phát triển, thêm header để backend có thể nhận diện
+  if (import.meta.env.DEV) {
+    config.headers['X-Development-Mode'] = 'true';
   }
   
   return config;
 });
 
-api.interceptors.request.use(config => {
-  const cachedUser = getUser();
-  if (cachedUser?.tokens) {
-    config.headers['Authorization'] = `Bearer ${cachedUser.tokens}`;
-  }
-  return config;
-});
+// Xóa các interceptor request trùng lặp để tránh ghi đè header
 
-api.interceptors.request.use((config) => {
-  const tg = window.Telegram?.WebApp;
-  if (tg && tg.initData) {
-    config.headers['Telegram-Data'] = tg.initData; // Đảm bảo gửi dữ liệu Telegram
-  }
-  return config;
-});
+// Thêm biến trạng thái để theo dõi quá trình xác thực
+const authState = {
+  isAuthenticating: false,
+  authRetryCount: 0,
+  maxRetries: 2
+};
 
 // Xử lý lỗi chung và refresh token
 api.interceptors.response.use(
   (response) => response,
   async (error) => {
-    console.error('API Error:', error.response?.data || error.message);
-    
-    // Nếu lỗi 401, kiểm tra xem có thể xác thực lại không
-    if (error.response?.status === 401) {
-      console.log('Session expired or not found, checking local storage:', error);
-      // Các bước xử lý phiên hết hạn có thể thêm ở đây
+    // Nếu không phải lỗi response, throw luôn
+    if (!error.response) {
+      return Promise.reject(error);
     }
     
-    return Promise.reject(error);
-  }
-);
-
-api.interceptors.response.use(
-  response => response,
-  async error => {
-    if (error.response?.status === 401) {
-      console.log("Session expired, attempting to refresh token...");
-      const refreshToken = localStorage.getItem("refreshToken");
-      if (refreshToken) {
-        try {
-          const { data } = await api.post("/auth/refresh", { refreshToken });
-          localStorage.setItem("authToken", data.newToken);
-          error.config.headers.Authorization = `Bearer ${data.newToken}`;
-          return api(error.config); // Gửi lại request
-        } catch (refreshError) {
-          console.error("Failed to refresh token:", refreshError);
+    const originalRequest = error.config;
+    
+    // Kiểm tra nếu lỗi 401 và chưa thử refresh
+    if (error.response.status === 401 && !originalRequest._retry) {
+      // Ngăn nhiều request cùng thử refresh token
+      if (authState.isAuthenticating) {
+        // Đợi quá trình xác thực hiện tại hoàn thành
+        await new Promise(resolve => {
+          const checkAuth = () => {
+            if (!authState.isAuthenticating) {
+              resolve(true);
+            } else {
+              setTimeout(checkAuth, 200);
+            }
+          };
+          checkAuth();
+        });
+        
+        // Nếu đã xác thực thành công, thử lại request
+        const token = localStorage.getItem("authToken");
+        if (token) {
+          originalRequest.headers["Authorization"] = `Bearer ${token}`;
+          return api(originalRequest);
         }
       }
+      
+      // Giới hạn số lần thử lại
+      if (authState.authRetryCount >= authState.maxRetries) {
+        console.log("Đã vượt quá số lần thử lại xác thực tối đa");
+        
+        // Reset trạng thái
+        authState.authRetryCount = 0;
+        authState.isAuthenticating = false;
+        
+        // Xóa token cũ
+        localStorage.removeItem("authToken");
+        localStorage.removeItem("refreshToken");
+        
+        console.log("Session expired, redirecting to login page");
+        return Promise.reject(error);
+      }
+      
+      // Đánh dấu đang thực hiện xác thực
+      authState.isAuthenticating = true;
+      authState.authRetryCount++;
+      originalRequest._retry = true;
+
+      console.log("Đang thử lấy lại token xác thực từ Telegram...");
+      
+      try {
+        // Lấy dữ liệu Telegram
+        const tg = window.Telegram?.WebApp;
+        if (!tg || !tg.initData) {
+          throw new Error("Không có dữ liệu Telegram WebApp");
+        }
+        
+        // Gọi API xác thực Telegram để lấy token mới
+        const response = await api.post("/auth/telegram", { 
+          initData: tg.initData 
+        });
+        
+        if (response.data && response.data.token) {
+          // Lưu token mới
+          localStorage.setItem("authToken", response.data.token);
+          if (response.data.refreshToken) {
+            localStorage.setItem("refreshToken", response.data.refreshToken);
+          }
+          
+          // Cập nhật header cho request hiện tại
+          originalRequest.headers["Authorization"] = `Bearer ${response.data.token}`;
+          
+          console.log("Đã làm mới token thành công");
+          
+          // Reset trạng thái xác thực
+          authState.isAuthenticating = false;
+          
+          // Thử lại request gốc
+          return api(originalRequest);
+        } else {
+          throw new Error("Không nhận được token mới");
+        }
+      } catch (refreshError) {
+        console.error("Không thể làm mới token:", refreshError);
+        
+        // Reset trạng thái
+        authState.isAuthenticating = false;
+        
+        // Nếu quá số lần thử, xóa token
+        if (authState.authRetryCount >= authState.maxRetries) {
+          localStorage.removeItem("authToken");
+          localStorage.removeItem("refreshToken");
+          console.log("Xóa token cũ do không thể làm mới");
+        }
+        
+        return Promise.reject(error);
+      }
     }
+    
+    // Các lỗi khác không phải 401 hoặc đã thử refresh
+    console.error('API Error:', error.response?.data || error.message);
     return Promise.reject(error);
   }
 );
