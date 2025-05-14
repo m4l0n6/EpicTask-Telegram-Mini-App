@@ -61,8 +61,8 @@ const Header: React.FC = () => {
                   </AvatarFallback>
                 </Avatar>
                 <div className="hidden md:flex flex-col">
-                  <span className="font-medium text-gray-800 text-sm">
-                    {user.first_name || user.username || "User"} {/* Ưu tiên first_name */}
+                  <span className="font-medium">
+                    {user.first_name || user.username || `User${user._id}`}
                   </span>
                   <span className="text-gray-500 text-xs">
                     Level {user.level}

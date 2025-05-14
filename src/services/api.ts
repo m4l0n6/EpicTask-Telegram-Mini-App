@@ -78,10 +78,14 @@ api.interceptors.response.use(
       console.log("Session expired, attempting to refresh token...");
       const refreshToken = localStorage.getItem("refreshToken");
       if (refreshToken) {
-        const { data } = await api.post("/auth/refresh", { refreshToken });
-        localStorage.setItem("authToken", data.newToken);
-        error.config.headers.Authorization = `Bearer ${data.newToken}`;
-        return api(error.config); // Gửi lại request
+        try {
+          const { data } = await api.post("/auth/refresh", { refreshToken });
+          localStorage.setItem("authToken", data.newToken);
+          error.config.headers.Authorization = `Bearer ${data.newToken}`;
+          return api(error.config); // Gửi lại request
+        } catch (refreshError) {
+          console.error("Failed to refresh token:", refreshError);
+        }
       }
     }
     return Promise.reject(error);

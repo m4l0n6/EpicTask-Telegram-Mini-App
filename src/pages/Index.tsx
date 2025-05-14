@@ -35,7 +35,7 @@ import { toast } from "@/hooks/use-toast";
 
 const Index: React.FC = () => {
   const { user, isLoading } = useAuth();
-  const { tasks: contextTasks, addTask, markTaskComplete } = useTask();
+  const { addTask, markTaskComplete } = useTask();
   const [tasks, setTasks] = useState<Task[]>([]);
   const [pendingTasks, setPendingTasks] = useState<Task[]>([]);
   const [isTasksLoading, setIsTasksLoading] = useState(true);
@@ -50,12 +50,14 @@ const Index: React.FC = () => {
   const [newTaskXP, setNewTaskXP] = useState(10);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  const [tasksLoaded, setTasksLoaded] = useState(false);
+
   useEffect(() => {
-    // Chỉ tải tasks khi user đã đăng nhập
-    if (user) {
+    if (user && !tasksLoaded) {
       loadTasks();
+      setTasksLoaded(true);
     }
-  }, [user, contextTasks]);
+  }, [user, tasksLoaded]);
 
   const loadTasks = async () => {
     try {

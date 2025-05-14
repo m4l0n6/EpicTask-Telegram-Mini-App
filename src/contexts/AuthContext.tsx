@@ -241,13 +241,11 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
     };
   }, [user]);  // Effect này tránh vòng lặp vô hạn bằng cách sử dụng ref
   const loginAttemptedRef = useRef(false);
-  
+
   useEffect(() => {
-    // Chỉ thực hiện đăng nhập tự động một lần khi component được mount
-    // và khi user chưa đăng nhập và không đang loading
     if (!user && !isLoading && !loginAttemptedRef.current) {
       loginAttemptedRef.current = true;
-      login().catch(e => console.error("Auto login attempt failed:", e));
+      login().catch((e) => console.error("Auto login attempt failed:", e));
     }
   }, [user, isLoading, login]);
 
@@ -297,6 +295,18 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
     };
   };
   connectWebSocket();
+
+  useEffect(() => {
+    if (user) {
+      const socket = new WebSocket("wss://epictask-backend.onrender.com");
+      socket.onopen = () => {
+        console.log("WebSocket connected");
+        socket.send(JSON.stringify({ type: "authenticate", userId: user._id }));
+      };
+      socket.onclose = () => console.log("WebSocket disconnected");
+      return () => socket.close();
+    }
+  }, [user]);
 
   return (
     <AuthContext.Provider value={{ user, isLoading, error, login, logout }}>
