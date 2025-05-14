@@ -110,17 +110,15 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
       
       // Xử lý daily login
       try {
-        const { isFirstLogin, tokensAwarded, currentStreak } =
-          await processDailyLogin();
-
+        const { isFirstLogin, tokensAwarded } = await processDailyLogin();
         if (isFirstLogin && tokensAwarded > 0) {
           toast({
             title: "Daily Login Reward!",
-            description: `You received ${tokensAwarded} tokens for logging in today! Current streak: ${currentStreak} days.`,
+            description: `You received ${tokensAwarded} tokens for logging in today!`,
           });
         }
       } catch (err) {
-        console.error("Không thể xử lý daily login:", err);
+        console.error("Cannot hanlde daily login:", err);
       }
 
       // Thông báo đăng nhập thành công
@@ -289,6 +287,16 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
       });
     }
   };
+
+  const connectWebSocket = () => {
+    const socket = new WebSocket("wss://epictask-backend.onrender.com");
+    socket.onopen = () => console.log("WebSocket connected");
+    socket.onclose = () => {
+      console.log("WebSocket disconnected, retrying...");
+      setTimeout(connectWebSocket, 5000); // Thử lại sau 5 giây
+    };
+  };
+  connectWebSocket();
 
   return (
     <AuthContext.Provider value={{ user, isLoading, error, login, logout }}>

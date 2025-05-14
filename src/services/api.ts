@@ -76,7 +76,13 @@ api.interceptors.response.use(
   async error => {
     if (error.response?.status === 401) {
       console.log("Session expired, attempting to refresh token...");
-      // Logic làm mới token ở đây
+      const refreshToken = localStorage.getItem("refreshToken");
+      if (refreshToken) {
+        const { data } = await api.post("/auth/refresh", { refreshToken });
+        localStorage.setItem("authToken", data.newToken);
+        error.config.headers.Authorization = `Bearer ${data.newToken}`;
+        return api(error.config); // Gửi lại request
+      }
     }
     return Promise.reject(error);
   }

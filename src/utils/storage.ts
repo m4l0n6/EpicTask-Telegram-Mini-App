@@ -1,5 +1,5 @@
 // Kho chứa thực hiện các chức năng lưu trữ dữ liệu
-import { User, Task, DailyTask, Notification, Badge } from '@/types';
+import { User, Task, DailyTask, Badge } from '@/types';
 
 const STORAGE_KEYS = {
     USER: 'epicTasks_user',
@@ -101,31 +101,31 @@ export const unlockBadge = (badgeId: string): Badge | null => {
   return null;
 };
 
-// Chắc năng của thông báo
-export const saveNotifications = (notifications: Notification[]): void => {
-  localStorage.setItem(STORAGE_KEYS.NOTIFICATIONS, JSON.stringify(notifications));
-};
+// // Chắc năng của thông báo
+// export const saveNotifications = (notifications: Notification[]): void => {
+//   localStorage.setItem(STORAGE_KEYS.NOTIFICATIONS, JSON.stringify(notifications));
+// };
 
-export const getNotifications = (): Notification[] => {
-  const notificationsJson = localStorage.getItem(STORAGE_KEYS.NOTIFICATIONS);
-  return notificationsJson ? JSON.parse(notificationsJson) : [];
-};
+// export const getNotifications = (): Notification[] => {
+//   const notificationsJson = localStorage.getItem(STORAGE_KEYS.NOTIFICATIONS);
+//   return notificationsJson ? JSON.parse(notificationsJson) : [];
+// };
 
-export const addNotification = (notification: Notification): void => {
-  const notifications = getNotifications();
-  notifications.unshift(notification); // thêm thông báo vào đầu
-  saveNotifications(notifications);
-};
+// export const addNotification = (notification: Notification): void => {
+//   const notifications = getNotifications();
+//   notifications.unshift(notification); // thêm thông báo vào đầu
+//   saveNotifications(notifications);
+// };
 
-// Đánh dãu thông báo
-export const markNotificationAsRead = (notificationId: string): void => {
-  const notifications = getNotifications();
-  const index = notifications.findIndex(notification => notification.id === notificationId);
-  if (index !== -1) {
-    notifications[index].read = true;
-    saveNotifications(notifications);
-  }
-};
+// // Đánh dãu thông báo
+// export const markNotificationAsRead = (notificationId: string): void => {
+//   const notifications = getNotifications();
+//   const index = notifications.findIndex(notification => notification.id === notificationId);
+//   if (index !== -1) {
+//     notifications[index].read = true;
+//     saveNotifications(notifications);
+//   }
+// };
 
 
 // Các chắc năng của bảng xếp hạng
