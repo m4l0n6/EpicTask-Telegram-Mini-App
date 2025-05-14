@@ -50,10 +50,16 @@ interface TaskFormProps {
   task?: Task;
   onCancel: () => void;
   onSubmit: (values: TaskFormValues) => void;
+  isSubmitting?: boolean;
 }
 
 
-const TaskForm: React.FC<TaskFormProps> = ({ task, onSubmit, onCancel }) => {
+const TaskForm: React.FC<TaskFormProps> = ({ 
+  task, 
+  onSubmit, 
+  onCancel,
+  isSubmitting = false 
+}) => {
   // const { getTodayTasksCount } = useTask();
   // const tasksToday = getTodayTasksCount();
 
@@ -181,10 +187,19 @@ const TaskForm: React.FC<TaskFormProps> = ({ task, onSubmit, onCancel }) => {
         )} */}
 
         <div className="flex justify-end gap-2">
-          <Button type="button" variant="outline" onClick={onCancel}>
+          <Button type="button" variant="outline" onClick={onCancel} disabled={isSubmitting}>
             Cancel
           </Button>
-          <Button type="submit">{task ? "Update Task" : "Create Task"}</Button>
+          <Button type="submit" disabled={isSubmitting}>
+            {isSubmitting ? (
+              <>
+                <span className="mr-2 border-2 border-b-transparent rounded-full w-4 h-4 animate-spin"></span>
+                {task ? "Updating..." : "Creating..."}
+              </>
+            ) : (
+              task ? "Update Task" : "Create Task"
+            )}
+          </Button>
         </div>
       </form>
     </Form>

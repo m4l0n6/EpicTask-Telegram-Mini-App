@@ -4,6 +4,7 @@ import { useTask } from "../contexts/TaskContext";
 import { taskApi } from "../services/api";
 import { Task } from "../types";
 import { useNavigate } from "react-router-dom";
+import TaskForm from "@/components/tasks/TaskForm";
 
 // Components
 import {
@@ -25,9 +26,6 @@ import {
   DialogFooter,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 
 // Icons
 import { CalendarCheck, CheckCircle, Clock, Star, Plus } from "lucide-react";
@@ -44,10 +42,6 @@ const Index: React.FC = () => {
 
   // Task creation state
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
-  const [newTaskTitle, setNewTaskTitle] = useState("");
-  const [newTaskDescription, setNewTaskDescription] = useState("");
-  const [newTaskDeadline, setNewTaskDeadline] = useState("");
-  const [newTaskXP, setNewTaskXP] = useState(10);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const [tasksLoaded, setTasksLoaded] = useState(false);
@@ -75,8 +69,13 @@ const Index: React.FC = () => {
     }
   };
 
-  const handleCreateTask = async () => {
-    if (!newTaskTitle.trim()) {
+  const handleAddTask = async (values: {
+    title?: string;
+    description?: string;
+    deadline?: Date;
+    xpReward?: number;
+  }) => {
+    if (!values.title || values.title.trim() === "") {
       toast({
         title: "Error",
         description: "Task title is required",
@@ -84,30 +83,31 @@ const Index: React.FC = () => {
       });
       return;
     }
-
+  
     setIsSubmitting(true);
-
+  
     try {
       await addTask({
-        title: newTaskTitle,
-        description: newTaskDescription,
-        deadline: newTaskDeadline,
-        xpReward: newTaskXP,
+        title: values.title,
+        description: values.description || "",
+        deadline: values.deadline ? values.deadline.toISOString() : null,
+        xpReward: values.xpReward || 10,
         updatedAt: new Date().toISOString(),
         owner: user?.username || user?.first_name || "",
       });
-
-      // Reset form
-      setNewTaskTitle("");
-      setNewTaskDescription("");
-      setNewTaskDeadline("");
-      setNewTaskXP(10);
+  
+      // Close dialog
       setIsCreateDialogOpen(false);
-
+  
       // Refresh tasks
       loadTasks();
     } catch (error) {
       console.error("Failed to create task:", error);
+      toast({
+        title: "Error",
+        description: "Failed to create task. Please try again.",
+        variant: "destructive",
+      });
     } finally {
       setIsSubmitting(false);
     }
@@ -240,60 +240,17 @@ const Index: React.FC = () => {
             <DialogHeader>
               <DialogTitle>Create a New Task</DialogTitle>
             </DialogHeader>
-            <div className="gap-4 grid py-4">
-              <div className="gap-2 grid">
-                <Label htmlFor="title">Task Title</Label>
-                <Input
-                  id="title"
-                  value={newTaskTitle}
-                  onChange={(e) => setNewTaskTitle(e.target.value)}
-                  placeholder="Enter task title"
-                />
-              </div>
-              <div className="gap-2 grid">
-                <Label htmlFor="description">Description (Optional)</Label>
-                <Textarea
-                  id="description"
-                  value={newTaskDescription}
-                  onChange={(e) => setNewTaskDescription(e.target.value)}
-                  placeholder="Enter task description"
-                />
-              </div>
-              <div className="gap-2 grid">
-                <Label htmlFor="deadline">Deadline (Optional)</Label>
-                <Input
-                  id="deadline"
-                  type="date"
-                  value={newTaskDeadline}
-                  onChange={(e) => setNewTaskDeadline(e.target.value)}
-                />
-              </div>
-              <div className="gap-2 grid">
-                <Label htmlFor="xp">XP Reward (1-100)</Label>
-                <Input
-                  id="xp"
-                  type="number"
-                  min="1"
-                  max="100"
-                  value={newTaskXP}
-                  onChange={(e) => setNewTaskXP(parseInt(e.target.value) || 10)}
-                />
-              </div>
-            </div>
-            <DialogFooter>
-              <Button
-                variant="outline"
-                onClick={() => setIsCreateDialogOpen(false)}
-              >
-                Cancel
-              </Button>
-              <Button
-                onClick={handleCreateTask}
-                disabled={isSubmitting || !newTaskTitle.trim()}
-              >
-                {isSubmitting ? "Creating..." : "Create Task"}
-              </Button>
-            </DialogFooter>
+            <TaskForm 
+              onSubmit={(values) => {
+                handleAddTask({
+                  title: values.title,
+                  description: values.description,
+                  deadline: values.deadline,
+                  xpReward: values.xpReward
+                });
+              }}
+              onCancel={() => setIsCreateDialogOpen(false)}
+            />
           </DialogContent>
         </Dialog>
       </div>
