@@ -5,12 +5,8 @@ import { User } from '../types';
 const isDev = import.meta.env.DEV;
 const useMockApiInDev = true; // Set to false if you want to use real API in dev
 
-// Local storage keys
-const STORAGE_KEYS = {
-  USER: 'epicTask_user',
-  TASKS: 'epicTask_tasks',
-  AUTH_TOKEN: 'epicTask_token'
-};
+// Import shared constants
+import { STORAGE_KEYS } from './constants';
 
 // Initialize mock data for development mode
 const initMockData = () => {
@@ -99,9 +95,8 @@ api.interceptors.request.use(config => {
   if (tg && tg.initData) {
     config.headers['Telegram-Data'] = tg.initData;
   }
-  
-  // Thêm token xác thực
-  const token = localStorage.getItem("authToken");
+    // Thêm token xác thực
+  const token = localStorage.getItem(STORAGE_KEYS.AUTH_TOKEN);
   if (token) {
     config.headers["Authorization"] = `Bearer ${token}`;
   }
@@ -227,8 +222,7 @@ api.interceptors.response.use(
     // If not a response error, just reject
     if (!error.response) {
       return Promise.reject(error);
-    }
-      // Handle 401 error (Unauthorized)
+    }    // Handle 401 error (Unauthorized)
     if (error.response.status === 401 && !error.config._retry) {
       console.log("401 error, attempting to refresh authentication");
       
@@ -253,17 +247,25 @@ api.interceptors.response.use(
             // Save user data and any tokens
             if (authResponse.data.token) {
               localStorage.setItem(STORAGE_KEYS.AUTH_TOKEN, authResponse.data.token);
+              
+              // Update auth header and retry original request
+              error.config.headers["Authorization"] = `Bearer ${authResponse.data.token}`;
+              return api(error.config);
             }
-            
-            // Update auth header and retry original request
-            error.config.headers["Authorization"] = `Bearer ${authResponse.data.token}`;
-            return api(error.config);
           }
+        } else if (isDev && useMockApiInDev) {
+          // Trong chế độ development với mock API, hãy thử lại yêu cầu
+          return api(error.config);
         } else {
           console.error("No Telegram WebApp data available for reauthentication");
         }
       } catch (refreshError) {
         console.error("Failed to refresh authentication:", refreshError);
+        
+        // Nếu đang ở chế độ development với mock data, sử dụng mock data
+        if (isDev && useMockApiInDev) {
+          return api(error.config);
+        }
       }
     }
     
@@ -339,17 +341,44 @@ export const taskApi = {
   },
 };
 
+// Import WebSocket service
+import { socketService } from './socket';
+
 export const authApi = {
   // Đăng nhập qua Telegram
   telegramLogin: async (data: TelegramAuthData): Promise<User> => {
     const response = await api.post("/auth/telegram", data);
+    
+    // Lưu token nếu có
+    if (response.data && response.data.token) {
+      localStorage.setItem(STORAGE_KEYS.AUTH_TOKEN, response.data.token);
+      
+      // Kết nối WebSocket sau khi xác thực thành công
+      socketService.connect();
+    }
+    
     return response.data;
   },
-  
-  // Đăng xuất
+    // Đăng xuất
   logout: async (): Promise<void> => {
-    const response = await api.post("/auth/logout");
-    return response.data;
+    try {
+      const response = await api.post("/auth/logout");
+      
+      // Xóa dữ liệu đã lưu trữ bất kể kết quả API
+      localStorage.removeItem(STORAGE_KEYS.AUTH_TOKEN);
+      localStorage.removeItem(STORAGE_KEYS.USER);
+      
+      // Ngắt kết nối WebSocket
+      socketService.disconnect();
+      
+      return response.data;
+    } catch (error) {
+      // Ngay cả khi API thất bại, vẫn nên dọn dẹp trạng thái cục bộ
+      localStorage.removeItem(STORAGE_KEYS.AUTH_TOKEN);
+      localStorage.removeItem(STORAGE_KEYS.USER);
+      socketService.disconnect();
+      throw error;
+    }
   },
 
   // Lấy thông tin profile

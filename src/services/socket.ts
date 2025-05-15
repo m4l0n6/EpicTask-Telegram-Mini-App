@@ -1,0 +1,316 @@
+// Socket service để xử lý kết nối WebSocket với máy chủ
+import { STORAGE_KEYS } from './constants';
+
+// Trạng thái kết nối Socket
+export enum ConnectionState {
+  CONNECTING = 'connecting',
+  CONNECTED = 'connected',
+  DISCONNECTED = 'disconnected',
+  RECONNECTING = 'reconnecting',
+  FAILED = 'failed',
+}
+
+// Tùy chỉnh cấu hình
+const SOCKET_CONFIG = {
+  MAX_RETRIES: 3,
+  RETRY_TIMEOUT: 3000, // 3 giây
+  PING_INTERVAL: 30000, // 30 giây
+};
+
+// Kiểu callback
+type EventCallback = (...args: unknown[]) => void;
+type StateChangeCallback = (state: ConnectionState) => void;
+
+class SocketService {
+  private socket: WebSocket | null = null;
+  private url: string;
+  private retries = 0;
+  private pingInterval: number | null = null;
+  private reconnectTimeout: number | null = null;
+  private eventListeners: Map<string, EventCallback[]> = new Map();
+  private stateListeners: StateChangeCallback[] = [];
+  private connectionState: ConnectionState = ConnectionState.DISCONNECTED;
+  private manuallyDisconnected = false;
+  
+  constructor() {
+    // Lấy URL WebSocket từ biến môi trường hoặc sử dụng mặc định
+    const wsBaseUrl = import.meta.env.VITE_WS_URL || 'wss://epictask-backend.onrender.com';
+    
+    // Đảm bảo URL bắt đầu bằng wss:// hoặc ws:// (sử dụng wss trong production)
+    let baseUrl = wsBaseUrl;
+    
+    if (!baseUrl.match(/^wss?:\/\//)) {
+      // Nếu không có protocol, thêm theo môi trường
+      baseUrl = (import.meta.env.DEV ? 'ws://' : 'wss://') + baseUrl;
+    } else if (baseUrl.startsWith('http://')) {
+      baseUrl = baseUrl.replace('http://', 'ws://');
+    } else if (baseUrl.startsWith('https://')) {
+      baseUrl = baseUrl.replace('https://', 'wss://');
+    }
+    
+    // Chuẩn hóa URL nếu cần thiết
+    this.url = baseUrl;
+    
+    // Ràng buộc các phương thức
+    this.connect = this.connect.bind(this);
+    this.disconnect = this.disconnect.bind(this);
+    this.reconnect = this.reconnect.bind(this);
+    this.onMessage = this.onMessage.bind(this);
+    this.onOpen = this.onOpen.bind(this);
+    this.onClose = this.onClose.bind(this);
+    this.onError = this.onError.bind(this);
+    
+    // Log URL để debug
+    console.log('WebSocket service initialized with URL:', this.url);
+  }
+  
+  // Kết nối đến máy chủ WebSocket
+  connect(): void {
+    if (this.socket?.readyState === WebSocket.OPEN) {
+      console.log('WebSocket already connected');
+      return; // Đã kết nối
+    }
+    
+    this.manuallyDisconnected = false;
+    this.updateState(ConnectionState.CONNECTING);
+    
+    try {
+      const token = localStorage.getItem(STORAGE_KEYS.AUTH_TOKEN);
+      
+      // Tiếp cận đơn giản hơn, sử dụng query parameter cho token
+      const wsUrl = token ? `${this.url}?token=${encodeURIComponent(token)}` : this.url;
+      
+      console.log('Connecting to WebSocket:', wsUrl.split('?')[0]); // Không log token
+      this.socket = new WebSocket(wsUrl);
+      this.socket.onopen = this.onOpen;
+      this.socket.onclose = this.onClose;
+      this.socket.onmessage = this.onMessage;
+      this.socket.onerror = this.onError;
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      console.error('Failed to create WebSocket connection:', errorMessage);
+      this.updateState(ConnectionState.DISCONNECTED);
+      this.scheduleReconnect();
+    }
+  }
+  
+  // Ngắt kết nối từ máy chủ
+  disconnect(): void {
+    this.manuallyDisconnected = true;
+    this.cleanupTimers();
+    
+    if (this.socket) {
+      this.updateState(ConnectionState.DISCONNECTED);
+      this.socket.close();
+      this.socket = null;
+    }
+  }
+  
+  // Thử kết nối lại
+  reconnect(): void {
+    this.cleanupTimers();
+    
+    if (this.manuallyDisconnected) {
+      console.log('Skipping reconnection attempt because disconnect was manual');
+      return; // Không kết nối lại nếu ngắt kết nối thủ công
+    }
+    
+    if (this.retries < SOCKET_CONFIG.MAX_RETRIES) {
+      this.retries++;
+      this.updateState(ConnectionState.RECONNECTING);
+      console.log(`Retrying WebSocket connection (${this.retries}/${SOCKET_CONFIG.MAX_RETRIES})...`);
+      this.connect();
+    } else {
+      this.updateState(ConnectionState.FAILED);
+      console.log('Max WebSocket retry attempts reached');
+      
+      // Sau khi đạt số lần thử lại tối đa, đặt lại bộ đếm sau một thời gian
+      setTimeout(() => {
+        console.log('Resetting retry counter after maximum attempts');
+        this.retries = 0;
+      }, SOCKET_CONFIG.RETRY_TIMEOUT * 2);
+    }
+  }
+  
+  // Lên lịch kết nối lại
+  private scheduleReconnect(): void {
+    if (this.reconnectTimeout !== null) {
+      clearTimeout(this.reconnectTimeout);
+    }
+    
+    this.reconnectTimeout = window.setTimeout(
+      this.reconnect,
+      SOCKET_CONFIG.RETRY_TIMEOUT
+    ) as unknown as number;
+  }
+  
+  // Thiết lập ping định kỳ để giữ kết nối
+  private setupPing(): void {
+    this.cleanupPing();
+    
+    this.pingInterval = window.setInterval(() => {
+      if (this.socket?.readyState === WebSocket.OPEN) {
+        this.socket.send(JSON.stringify({ type: 'ping' }));
+      }
+    }, SOCKET_CONFIG.PING_INTERVAL) as unknown as number;
+  }
+  
+  // Dọn dẹp ping định kỳ
+  private cleanupPing(): void {
+    if (this.pingInterval !== null) {
+      clearInterval(this.pingInterval);
+      this.pingInterval = null;
+    }
+  }
+  
+  // Dọn dẹp tất cả timers
+  private cleanupTimers(): void {
+    this.cleanupPing();
+    
+    if (this.reconnectTimeout !== null) {
+      clearTimeout(this.reconnectTimeout);
+      this.reconnectTimeout = null;
+    }
+  }
+  
+  // Xử lý sự kiện WebSocket
+  private onOpen(): void {
+    console.log('Socket connected!', this.socket ? this.socket.url.split('?')[0] : '');
+    this.retries = 0;
+    this.updateState(ConnectionState.CONNECTED);
+    this.setupPing();
+    this.emit('connected');
+  }
+  
+  private onClose(event: CloseEvent): void {
+    console.log('WebSocket disconnected', event.code, event.reason);
+    this.cleanupPing();
+    this.updateState(ConnectionState.DISCONNECTED);
+    
+    if (!this.manuallyDisconnected) {
+      this.scheduleReconnect();
+    }
+    
+    this.emit('disconnected', event);
+  }
+  
+  private onError(event: Event): void {
+    console.log('WebSocket error:', event);
+    this.emit('error', event);
+  }
+  
+  private onMessage(event: MessageEvent): void {
+    try {
+      const data = JSON.parse(event.data);
+      const eventType = data.type || 'message';
+      this.emit(eventType, data);
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      console.error('Failed to parse WebSocket message:', errorMessage);
+      this.emit('message', event.data);
+    }
+  }
+  
+  // Phương thức phát sự kiện
+  private emit(event: string, ...args: unknown[]): void {
+    const callbacks = this.eventListeners.get(event) || [];
+    callbacks.forEach(callback => {
+      try {
+        callback(...args);
+      } catch (error: unknown) {
+        const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+        console.error(`Error in ${event} event handler:`, errorMessage);
+      }
+    });
+  }
+  
+  // Cập nhật trạng thái kết nối
+  private updateState(state: ConnectionState): void {
+    if (this.connectionState !== state) {
+      this.connectionState = state;
+      console.log('WebSocket state changed to:', state);
+      this.stateListeners.forEach(listener => {
+        try {
+          listener(state);
+        } catch (error: unknown) {
+          const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+          console.error('Error in state change listener:', errorMessage);
+        }
+      });
+    }
+  }
+  
+  // API công khai
+  
+  // Gửi dữ liệu qua WebSocket
+  send(data: unknown): boolean {
+    if (this.socket?.readyState !== WebSocket.OPEN) {
+      console.error('Cannot send message: WebSocket not connected');
+      return false;
+    }
+    
+    try {
+      const message = typeof data === 'string' ? data : JSON.stringify(data);
+      this.socket.send(message);
+      return true;
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      console.error('Failed to send WebSocket message:', errorMessage);
+      return false;
+    }
+  }
+  
+  // Đăng ký sự kiện
+  on(event: string, callback: EventCallback): void {
+    if (!this.eventListeners.has(event)) {
+      this.eventListeners.set(event, []);
+    }
+    this.eventListeners.get(event)!.push(callback);
+  }
+  
+  // Hủy đăng ký sự kiện
+  off(event: string, callback: EventCallback): void {
+    if (!this.eventListeners.has(event)) return;
+    
+    const callbacks = this.eventListeners.get(event)!;
+    const index = callbacks.indexOf(callback);
+    if (index !== -1) {
+      callbacks.splice(index, 1);
+    }
+  }
+  
+  // Đăng ký theo dõi thay đổi trạng thái
+  onStateChange(callback: StateChangeCallback): void {
+    this.stateListeners.push(callback);
+    // Gọi ngay với trạng thái hiện tại
+    callback(this.connectionState);
+  }
+  
+  // Hủy đăng ký theo dõi thay đổi trạng thái
+  offStateChange(callback: StateChangeCallback): void {
+    const index = this.stateListeners.indexOf(callback);
+    if (index !== -1) {
+      this.stateListeners.splice(index, 1);
+    }
+  }
+  
+  // Lấy trạng thái kết nối hiện tại
+  getState(): ConnectionState {
+    return this.connectionState;
+  }
+}
+
+// Tạo instance singleton
+export const socketService = new SocketService();
+
+// Tự động kết nối nếu có token sẵn
+const token = localStorage.getItem(STORAGE_KEYS.AUTH_TOKEN);
+if (token) {
+  // Khởi động kết nối sau một khoảng thời gian ngắn để đảm bảo ứng dụng đã tải xong
+  setTimeout(() => {
+    console.log('Auto-connecting WebSocket due to existing token');
+    socketService.connect();
+  }, 1000);
+}
+
+export default socketService;
