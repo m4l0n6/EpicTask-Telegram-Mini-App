@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { Task } from '@/types';
 import Loading from '../ui/Loading';
-import { useTask } from "@/hooks/use-task";
+import { useTask } from "@/contexts/TaskContext";
 import { useAuth } from "@/contexts/AuthContext";
 import TaskForm from "./TaskForm";
 import { Button } from "@/components/ui/button";

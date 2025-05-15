@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { User, Task } from '../types';
+import { User } from '../types';
 
 // Development mode helpers
 const isDev = import.meta.env.DEV;
@@ -184,12 +184,11 @@ api.interceptors.response.use(
             data: newTask
           });
         }
-        
-        if (originalRequest.url.includes('/complete')) {
+          if (originalRequest.url.includes('/complete')) {
           // Handle task completion
           const taskId = originalRequest.url.split('/')[2];
           const tasks = JSON.parse(localStorage.getItem(STORAGE_KEYS.TASKS) || '[]');
-          const taskIndex = tasks.findIndex((t) => t._id === taskId);
+          const taskIndex = tasks.findIndex((t: { _id: string }) => t._id === taskId);
           
           if (taskIndex !== -1) {
             tasks[taskIndex].completed = true;

@@ -2,7 +2,7 @@ import React, {useState} from "react";
 import { Link } from "react-router-dom";
 import { Star } from "lucide-react";
 import { Badge } from "../components/ui/badge";
-import { useTask } from "@/hooks/use-task";
+import { useTask } from "../contexts/TaskContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "../components/ui/card";
 import { Progress } from "../components/ui/progress";

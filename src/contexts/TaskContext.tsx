@@ -356,4 +356,10 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
   );
 }
 
-// The useTask hook has been moved to src/hooks/use-task.tsx
+export const useTask = () => {
+  const context = React.useContext(TaskContext);
+  if (context === undefined) {
+    throw new Error("useTask must be used within a TaskProvider");
+  }
+  return context;
+}
