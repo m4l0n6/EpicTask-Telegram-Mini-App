@@ -62,7 +62,7 @@ const TaskList: React.FC = () => {
     })
 
     // Xử lý thêm tác vụ
-    const handleAddTask = (values: { title?: string; description?: string; deadline?: Date; xpReward?: number }) => {
+    const handleAddTask = (values: { title?: string; description?: string; deadline?: Date | null; xpReward?: number }) => {
       // Kiểm tra title không được để trống
       if (!values.title || values.title.trim() === "") {
         // Có thể hiển thị thông báo lỗi ở đây
@@ -100,7 +100,7 @@ const TaskList: React.FC = () => {
     }
 
     // Xử lý cập nhật tác vụ
-    const handleUpdateTask = (values: { title?: string; description?: string; deadline?: Date; xpReward?: number }) => {
+    const handleUpdateTask = (values: { title?: string; description?: string; deadline?: Date | null; xpReward?: number }) => {
         if (editingTask) {
             // Chuyển đổi Date thành chuỗi ISO cho API
             const taskData: Omit<Task, 'id' | 'completed' | 'createdAt' | 'completedAt' | 'userId'> = {

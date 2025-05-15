@@ -72,7 +72,7 @@ const Index: React.FC = () => {
   const handleAddTask = async (values: {
     title?: string;
     description?: string;
-    deadline?: Date;
+    deadline?: Date | null;
     xpReward?: number;
   }) => {
     if (!values.title || values.title.trim() === "") {
