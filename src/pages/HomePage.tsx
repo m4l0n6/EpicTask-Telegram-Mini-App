@@ -42,12 +42,11 @@ const HomePage: React.FC = () => {
     today.setHours(0, 0, 0, 0);
     return task.updatedAt && new Date(task.updatedAt) >= today;
   }).length;
-
   // Hàm xử lý thêm nhiệm vụ mới (sử dụng API)
   const handleAddTask = async (values: {
     title?: string;
     description?: string;
-    deadline?: Date;
+    deadline?: Date | null;
     xpReward?: number;
   }) => {
     // Kiểm tra xem người dùng đã nhập tiêu đề chưa
@@ -266,10 +265,10 @@ const HomePage: React.FC = () => {
               <Swords className="mr-2 w-5 h-5 text-epic-purple" />
               Create New Quest
             </DialogTitle>
-          </DialogHeader>
-          <TaskForm
+          </DialogHeader>          <TaskForm
             onSubmit={handleAddTask}
             onCancel={() => setShowAddDialog(false)}
+            isSubmitting={false}
           />
         </DialogContent>
       </Dialog>
