@@ -29,15 +29,15 @@ import { zodResolver } from "@hookform/resolvers/zod";
 // Định ng nghĩa lược đồ biểu mẫu với Zod
 const taskFormSchema = z.object({
   title: z.string().min(1, "Title is required").max(100, "Title is too long"),
-  description: z.string().max(500, "Description is too long").optional(),
+  description: z.string().min(1, "Description is required").max(500, "Description is too long"),
   deadline: z
-    .date()
+    .date({
+      required_error: "Deadline is required"
+    })
     .min(
       new Date(new Date().setHours(0, 0, 0, 0)),
       "Deadline must be in the future"
-    )
-    .optional()
-    .nullable(),
+    ),
   xpReward: z.coerce
     .number({ required_error: "XP reward is required" })
     .min(1, "Minimum XP reward is 1")
@@ -62,11 +62,10 @@ const TaskForm: React.FC<TaskFormProps> = ({
 }) => {
   // const { getTodayTasksCount } = useTask();
   // const tasksToday = getTodayTasksCount();
-
   const defaultValues: Partial<TaskFormValues> = {
     title: task?.title || "",
     description: task?.description || "",
-    deadline: task?.deadline ? new Date(task.deadline) : undefined,
+    deadline: task?.deadline ? new Date(task.deadline) : new Date(Date.now() + 24 * 60 * 60 * 1000), // Default to tomorrow
     xpReward: task?.xpReward || 10,
   };
 
@@ -123,7 +122,7 @@ const TaskForm: React.FC<TaskFormProps> = ({
           name="deadline"
           render={({ field }) => (
             <FormItem className="flex flex-col">
-              <FormLabel>Deadline (Optional)</FormLabel>
+              <FormLabel>Deadline</FormLabel>
               <Popover>
                 <PopoverTrigger asChild>
                   <FormControl>

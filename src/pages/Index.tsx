@@ -70,10 +70,10 @@ const Index: React.FC = () => {
   };
 
   const handleAddTask = async (values: {
-    title?: string;
-    description?: string;
-    deadline?: Date | null;
-    xpReward?: number;
+    title: string;
+    description: string;
+    deadline: Date;
+    xpReward: number;
   }) => {
     if (!values.title || values.title.trim() === "") {
       toast({
@@ -86,12 +86,12 @@ const Index: React.FC = () => {
   
     setIsSubmitting(true);
   
-    try {
+  try {
       await addTask({
         title: values.title,
-        description: values.description || "",
-        deadline: values.deadline ? values.deadline.toISOString() : null,
-        xpReward: values.xpReward || 10,
+        description: values.description,
+        deadline: values.deadline.toISOString(),
+        xpReward: values.xpReward,
         updatedAt: new Date().toISOString(),
         owner: user?.username || user?.first_name || "",
       });

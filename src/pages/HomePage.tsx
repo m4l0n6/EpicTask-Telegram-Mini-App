@@ -44,10 +44,10 @@ const HomePage: React.FC = () => {
   }).length;
   // Hàm xử lý thêm nhiệm vụ mới (sử dụng API)
   const handleAddTask = async (values: {
-    title?: string;
-    description?: string;
-    deadline?: Date | null;
-    xpReward?: number;
+    title: string;
+    description: string;
+    deadline: Date;
+    xpReward: number;
   }) => {
     // Kiểm tra xem người dùng đã nhập tiêu đề chưa
     if (!values.title || values.title.trim() === "") {
@@ -57,9 +57,9 @@ const HomePage: React.FC = () => {
     try {
       const taskData = {
         title: values.title,
-        description: values.description || "",
-        deadline: values.deadline ? values.deadline.toISOString() : null,
-        xpReward: values.xpReward || 10,
+        description: values.description,
+        deadline: values.deadline.toISOString(),
+        xpReward: values.xpReward,
         updatedAt: new Date().toISOString(), // Add updatedAt property
         owner: user?._id || "", // Add owner property
       };
