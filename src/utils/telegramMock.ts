@@ -215,6 +215,40 @@ export const initializeTelegramApi = () => {
     if (!localStorage.getItem('user')) {
       localStorage.setItem('user', JSON.stringify(mockUser));
     }
+    
+    // Initialize mock tasks if they don't exist
+    if (!localStorage.getItem('tasks')) {
+      const mockTasks = [
+        {
+          _id: "task_1",
+          title: "Complete the project demo",
+          description: "Finish the demo for our presentation next week",
+          deadline: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString(),
+          completed: false,
+          createdAt: new Date().toISOString(),
+          updatedAt: null,
+          xpReward: 50,
+          tokenReward: 10,
+          userId: mockUser._id,
+          owner: mockUser.username
+        },
+        {
+          _id: "task_2",
+          title: "Study for exam",
+          description: "Review chapters 5-8 for the upcoming test",
+          deadline: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+          completed: false,
+          createdAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
+          updatedAt: null,
+          xpReward: 30,
+          tokenReward: 6,
+          userId: mockUser._id,
+          owner: mockUser.username
+        }
+      ];
+      
+      localStorage.setItem('tasks', JSON.stringify(mockTasks));
+    }
   }
 
   return window.Telegram;

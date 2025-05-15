@@ -57,20 +57,17 @@ api.interceptors.response.use(
       return Promise.reject(error);
     }
     
-    const originalRequest = error.config;
-      // Đặc biệt cho môi trường phát triển khi gặp lỗi 401
-    if (error.response.status === 401 && import.meta.env.DEV) {
-      console.log("Development mode: Using local storage data instead of authentication");
+    const originalRequest = error.config;    // Đặc biệt cho môi trường phát triển - handle all API requests
+    if (import.meta.env.DEV) {
+      console.log("Development mode: Using mock data for", originalRequest.url);
       const storedUser = localStorage.getItem('user');
+      let mockUser;
       
-      if (storedUser && !originalRequest.url.includes('/auth/')) {
-        // Sử dụng dữ liệu giả lập trong môi trường phát triển
-        return Promise.resolve({ 
-          data: originalRequest.url.includes('tasks') ? [] : JSON.parse(storedUser)
-        });
+      if (storedUser) {
+        mockUser = JSON.parse(storedUser);
       } else {
-        // Create a mock user if not available in DEV mode
-        const mockUser = {
+        // Create a mock user if not available
+        mockUser = {
           _id: "dev_user_id",
           username: "dev_user",
           telegramId: "123456789",
@@ -85,12 +82,51 @@ api.interceptors.response.use(
           dailyLoginStreak: 1
         };
         localStorage.setItem('user', JSON.stringify(mockUser));
-        
-        // Return empty array for task requests, otherwise the mock user
+      }
+      
+      // Return appropriate mock response based on request type
+      if (originalRequest.url.includes('/auth/telegram')) {
+        // Handle Telegram authentication
         return Promise.resolve({
-          data: originalRequest.url.includes('tasks') ? [] : mockUser
+          data: mockUser
+        });
+      } else if (originalRequest.url.includes('/tasks') && originalRequest.method === 'GET') {
+        // Return tasks list (empty or from localStorage)
+        const storedTasks = localStorage.getItem('tasks') || '[]';
+        return Promise.resolve({
+          data: JSON.parse(storedTasks)
+        });
+      } else if (originalRequest.url.includes('/tasks') && originalRequest.method === 'POST') {
+        // Handle task creation
+        const newTask = {
+          _id: 'task_' + Date.now(),
+          ...originalRequest.data,
+          completed: false,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+          userId: mockUser._id,
+          tokenReward: Math.floor(originalRequest.data.xpReward * 0.2)
+        };
+        
+        // Save to mock storage
+        const storedTasks = JSON.parse(localStorage.getItem('tasks') || '[]');
+        storedTasks.push(newTask);
+        localStorage.setItem('tasks', JSON.stringify(storedTasks));
+        
+        return Promise.resolve({
+          data: newTask
+        });
+      } else if (originalRequest.url.includes('/users/me')) {
+        // Return user profile
+        return Promise.resolve({
+          data: mockUser
         });
       }
+      
+      // For any other request
+      return Promise.resolve({
+        data: {}
+      });
     }
     
     // Xử lý token hết hạn
