@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from "react";
+import React, { createContext, useState, useEffect } from "react";
 import { Task } from "@/types";
 
 import { useAuth } from "./AuthContext";
@@ -29,7 +29,7 @@ interface TaskContextType {
   getCompletedTasksCount: () => number;
 }
 
-const TaskContext = createContext<TaskContextType | undefined>(undefined);
+export const TaskContext = createContext<TaskContextType | undefined>(undefined);
 
 export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [tasks, setTasks] = useState<Task[]>([]);
@@ -92,13 +92,26 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   try {
     // Calculate token reward based on XP (default to 20% of XP)
-    const xpReward = Math.min(taskData.xpReward, 100); // Cap XP reward at 100
-
+    const xpReward = Math.min(taskData.xpReward, 100); // Cap XP reward at 100    // Ensure required fields are present
+    if (!taskData.title) {
+      throw new Error("Task title is required");
+    }
+    if (!taskData.description) {
+      throw new Error("Task description is required");
+    }
+    if (!taskData.deadline) {
+      throw new Error("Task deadline is required");
+    }
+      // Format the date properly for the API
+    const formattedDeadline = typeof taskData.deadline === 'string' 
+      ? taskData.deadline
+      : (taskData.deadline as Date).toISOString();
+    
     // Gọi API để tạo task mới
     const newTask = await taskApi.createTask({
       title: taskData.title,
       description: taskData.description,
-      deadline: taskData.deadline || "",
+      deadline: formattedDeadline,
       xpReward: xpReward,
     });
 
@@ -143,12 +156,23 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
           variant: "destructive",
         });
         return;
+      }      // Format the deadline properly      // Format the deadline properly and handle null values
+      let formattedDeadline: string = "";
+      if (taskData.deadline) {
+        formattedDeadline = typeof taskData.deadline === 'string'
+          ? taskData.deadline
+          : (taskData.deadline as Date).toISOString();
+      } else if (tasks[taskIndex].deadline) {
+        formattedDeadline = tasks[taskIndex].deadline;
+      } else {
+        // If all else fails, set to current date + 1 day
+        formattedDeadline = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
       }
-
+      
       const updatedTask = await taskApi.updateTask(taskId, {
-        title: taskData.title,
-        description: taskData.description,
-        deadline: taskData.deadline || "",
+        title: taskData.title || tasks[taskIndex].title,
+        description: taskData.description || tasks[taskIndex].description || "",
+        deadline: formattedDeadline,
       });
 
       setTasks((prevTasks) =>
@@ -332,10 +356,4 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
   );
 }
 
-export function useTask() {
-  const context = useContext(TaskContext);
-  if (context === undefined) {
-    throw new Error("useTask must be used within a TaskProvider");
-  }
-  return context;
-}
+// The useTask hook has been moved to src/hooks/use-task.tsx

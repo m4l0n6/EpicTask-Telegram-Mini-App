@@ -1,12 +1,87 @@
 import axios from 'axios';
+import { User, Task } from '../types';
 
-import { User } from '../types';
+// Development mode helpers
+const isDev = import.meta.env.DEV;
+const useMockApiInDev = true; // Set to false if you want to use real API in dev
+
+// Local storage keys
+const STORAGE_KEYS = {
+  USER: 'epicTask_user',
+  TASKS: 'epicTask_tasks',
+  AUTH_TOKEN: 'epicTask_token'
+};
+
+// Initialize mock data for development mode
+const initMockData = () => {
+  // Create mock user if not exists
+  if (!localStorage.getItem(STORAGE_KEYS.USER)) {
+    const mockUser = {
+      _id: "dev_user_id",
+      username: "dev_user",
+      telegramId: "123456789",
+      xp: 100,
+      level: 1,
+      tokens: 20,
+      avatar: "https://i.pravatar.cc/150?u=epicuser",
+      badges: [],
+      completedTasks: 0,
+      createdAt: new Date().toISOString(),
+      lastLoginAt: new Date().toISOString(),
+      dailyLoginStreak: 1
+    };
+    localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(mockUser));
+    localStorage.setItem(STORAGE_KEYS.AUTH_TOKEN, 'mock_auth_token_' + Date.now());
+  }
+  
+  // Create mock tasks if not exists
+  if (!localStorage.getItem(STORAGE_KEYS.TASKS)) {
+    const mockUser = JSON.parse(localStorage.getItem(STORAGE_KEYS.USER) || '{}');
+    const mockTasks = [
+      {
+        _id: "task_1",
+        title: "Complete project demo",
+        description: "Finish the presentation for next week",
+        deadline: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString(),
+        completed: false,
+        createdAt: new Date().toISOString(),
+        updatedAt: null,
+        xpReward: 50,
+        tokenReward: 10,
+        userId: mockUser._id,
+        owner: mockUser.username
+      },
+      {
+        _id: "task_2",
+        title: "Study for exam",
+        description: "Review chapters 5-8",
+        deadline: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000).toISOString(),
+        completed: false,
+        createdAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
+        updatedAt: null,
+        xpReward: 30,
+        tokenReward: 6,
+        userId: mockUser._id,
+        owner: mockUser.username
+      }
+    ];
+    localStorage.setItem(STORAGE_KEYS.TASKS, JSON.stringify(mockTasks));
+  }
+};
+
+// Initialize mock data right away in development mode
+if (isDev && useMockApiInDev) {
+  initMockData();
+}
+
+
 
 // Lấy URL API từ biến môi trường hoặc mặc định
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://epictask-backend.onrender.com/api/v1';
 
-console.log('Using API URL:', API_BASE_URL);
+console.log('Using API URL:', isDev && useMockApiInDev ? 'MOCK API (Development Mode)' : API_BASE_URL);
 
+// Create the API client
 const api = axios.create({
   baseURL: API_BASE_URL,
   withCredentials: true,
@@ -41,169 +116,159 @@ api.interceptors.request.use(config => {
 
 // Xóa các interceptor request trùng lặp để tránh ghi đè header
 
-// Thêm biến trạng thái để theo dõi quá trình xác thực
-const authState = {
-  isAuthenticating: false,
-  authRetryCount: 0,
-  maxRetries: 2
-};
+// We'll use a simpler approach for authentication
 
-// Xử lý lỗi chung và refresh token
+// Xử lý lỗi chung và mock data for development mode
 api.interceptors.response.use(
   (response) => response,
   async (error) => {
-    // Nếu không phải lỗi response, throw luôn
-    if (!error.response) {
-      return Promise.reject(error);
-    }
-    
-    const originalRequest = error.config;    // Đặc biệt cho môi trường phát triển - handle all API requests
-    if (import.meta.env.DEV) {
+    // Handle development mode with mock data
+    if (import.meta.env.DEV && useMockApiInDev) {
+      const originalRequest = error.config;
       console.log("Development mode: Using mock data for", originalRequest.url);
-      const storedUser = localStorage.getItem('user');
+      
+      // Get or create mock user
       let mockUser;
+      const storedUser = localStorage.getItem(STORAGE_KEYS.USER);
       
       if (storedUser) {
         mockUser = JSON.parse(storedUser);
       } else {
-        // Create a mock user if not available
-        mockUser = {
-          _id: "dev_user_id",
-          username: "dev_user",
-          telegramId: "123456789",
-          xp: 100,
-          level: 1,
-          tokens: 20,
-          avatar: "https://via.placeholder.com/150",
-          badges: [],
-          completedTasks: 0,
-          createdAt: new Date().toISOString(),
-          lastLoginAt: new Date().toISOString(),
-          dailyLoginStreak: 1
-        };
-        localStorage.setItem('user', JSON.stringify(mockUser));
+        // Initialize mock data if not already done
+        initMockData();
+        mockUser = JSON.parse(localStorage.getItem(STORAGE_KEYS.USER) || '{}');
       }
       
-      // Return appropriate mock response based on request type
+      // Handle different request types
       if (originalRequest.url.includes('/auth/telegram')) {
         // Handle Telegram authentication
         return Promise.resolve({
           data: mockUser
         });
-      } else if (originalRequest.url.includes('/tasks') && originalRequest.method === 'GET') {
-        // Return tasks list (empty or from localStorage)
-        const storedTasks = localStorage.getItem('tasks') || '[]';
-        return Promise.resolve({
-          data: JSON.parse(storedTasks)
-        });
-      } else if (originalRequest.url.includes('/tasks') && originalRequest.method === 'POST') {
-        // Handle task creation
-        const newTask = {
-          _id: 'task_' + Date.now(),
-          ...originalRequest.data,
-          completed: false,
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-          userId: mockUser._id,
-          tokenReward: Math.floor(originalRequest.data.xpReward * 0.2)
-        };
+      } 
+      
+      if (originalRequest.url.includes('/tasks')) {
+        if (originalRequest.method.toLowerCase() === 'get') {
+          // Return tasks list
+          const tasks = JSON.parse(localStorage.getItem(STORAGE_KEYS.TASKS) || '[]');
+          return Promise.resolve({
+            data: tasks
+          });
+        }
         
-        // Save to mock storage
-        const storedTasks = JSON.parse(localStorage.getItem('tasks') || '[]');
-        storedTasks.push(newTask);
-        localStorage.setItem('tasks', JSON.stringify(storedTasks));
+        if (originalRequest.method.toLowerCase() === 'post' && !originalRequest.url.includes('/complete')) {
+          // Handle task creation
+          const tasks = JSON.parse(localStorage.getItem(STORAGE_KEYS.TASKS) || '[]');
+          const requestData = typeof originalRequest.data === 'string' 
+            ? JSON.parse(originalRequest.data) 
+            : originalRequest.data;
+            
+          const newTask = {
+            _id: `task_${Date.now()}`,
+            title: requestData.title,
+            description: requestData.description || "",
+            deadline: requestData.deadline || new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
+            completed: false,
+            createdAt: new Date().toISOString(),
+            updatedAt: null,
+            xpReward: requestData.xpReward || 10,
+            tokenReward: Math.round((requestData.xpReward || 10) * 0.2),
+            userId: mockUser._id,
+            owner: mockUser.username
+          };
+          
+          tasks.push(newTask);
+          localStorage.setItem(STORAGE_KEYS.TASKS, JSON.stringify(tasks));
+          
+          return Promise.resolve({
+            data: newTask
+          });
+        }
         
-        return Promise.resolve({
-          data: newTask
-        });
-      } else if (originalRequest.url.includes('/users/me')) {
+        if (originalRequest.url.includes('/complete')) {
+          // Handle task completion
+          const taskId = originalRequest.url.split('/')[2];
+          const tasks = JSON.parse(localStorage.getItem(STORAGE_KEYS.TASKS) || '[]');
+          const taskIndex = tasks.findIndex((t) => t._id === taskId);
+          
+          if (taskIndex !== -1) {
+            tasks[taskIndex].completed = true;
+            tasks[taskIndex].updatedAt = new Date().toISOString();
+            
+            // Update user XP and tokens
+            mockUser.xp += tasks[taskIndex].xpReward;
+            mockUser.tokens += tasks[taskIndex].tokenReward;
+            mockUser.completedTasks = (mockUser.completedTasks || 0) + 1;
+            
+            localStorage.setItem(STORAGE_KEYS.TASKS, JSON.stringify(tasks));
+            localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(mockUser));
+            
+            return Promise.resolve({
+              data: tasks[taskIndex]
+            });
+          }
+        }
+      }
+      
+      if (originalRequest.url.includes('/users/me')) {
         // Return user profile
         return Promise.resolve({
           data: mockUser
         });
       }
       
-      // For any other request
+      // Default mock response
       return Promise.resolve({
         data: {}
       });
     }
     
-    // Xử lý token hết hạn
-    if (error.response.status === 401 && !originalRequest._retry) {
-      // Giới hạn số lần thử lại
-      if (authState.authRetryCount >= authState.maxRetries) {
-        console.log("Đã vượt quá số lần thử lại xác thực tối đa");
-        
-        // Reset trạng thái
-        authState.authRetryCount = 0;
-        authState.isAuthenticating = false;
-        
-        // Xóa token cũ
-        localStorage.removeItem("authToken");
-        localStorage.removeItem("refreshToken");
-        
-        console.log("Session expired, redirecting to login page");
-        return Promise.reject(error);
-      }
+    // For non-development mode or when not using mocks
+    
+    // If not a response error, just reject
+    if (!error.response) {
+      return Promise.reject(error);
+    }
+      // Handle 401 error (Unauthorized)
+    if (error.response.status === 401 && !error.config._retry) {
+      console.log("401 error, attempting to refresh authentication");
       
-      // Đánh dấu đang thực hiện xác thực
-      authState.isAuthenticating = true;
-      authState.authRetryCount++;
-      originalRequest._retry = true;
-
-      console.log("Đang thử lấy lại token xác thực từ Telegram...");
+      error.config._retry = true; // Mark that we've attempted to retry
       
       try {
-        // Lấy dữ liệu Telegram
+        // Try to authenticate with Telegram in case session was lost
         const tg = window.Telegram?.WebApp;
-        if (!tg || !tg.initData) {
-          throw new Error("Không có dữ liệu Telegram WebApp");
-        }
-        
-        // Gọi API xác thực Telegram để lấy token mới
-        const response = await api.post("/auth/telegram", { 
-          initData: tg.initData 
-        });
-        
-        if (response.data && response.data.token) {
-          // Lưu token mới
-          localStorage.setItem("authToken", response.data.token);
-          if (response.data.refreshToken) {
-            localStorage.setItem("refreshToken", response.data.refreshToken);
+        if (tg && tg.initData) {
+          // Create auth data object with both initData and user info
+          const authData = {
+            initData: tg.initData,
+            user: tg.initDataUnsafe?.user || {
+              id: 12345678, // Fallback ID for development
+              username: "dev_user"
+            }
+          };
+          
+          const authResponse = await api.post("/auth/telegram", authData);
+          
+          if (authResponse.data) {
+            // Save user data and any tokens
+            if (authResponse.data.token) {
+              localStorage.setItem(STORAGE_KEYS.AUTH_TOKEN, authResponse.data.token);
+            }
+            
+            // Update auth header and retry original request
+            error.config.headers["Authorization"] = `Bearer ${authResponse.data.token}`;
+            return api(error.config);
           }
-          
-          // Cập nhật header cho request hiện tại
-          originalRequest.headers["Authorization"] = `Bearer ${response.data.token}`;
-          
-          console.log("Đã làm mới token thành công");
-          
-          // Reset trạng thái xác thực
-          authState.isAuthenticating = false;
-          
-          // Thử lại request gốc
-          return api(originalRequest);
         } else {
-          throw new Error("Không nhận được token mới");
+          console.error("No Telegram WebApp data available for reauthentication");
         }
       } catch (refreshError) {
-        console.error("Không thể làm mới token:", refreshError);
-        
-        // Reset trạng thái
-        authState.isAuthenticating = false;
-        
-        // Nếu quá số lần thử, xóa token
-        if (authState.authRetryCount >= authState.maxRetries) {
-          localStorage.removeItem("authToken");
-          localStorage.removeItem("refreshToken");
-          console.log("Xóa token cũ do không thể làm mới");
-        }
-        
-        return Promise.reject(error);
+        console.error("Failed to refresh authentication:", refreshError);
       }
     }
     
-    // Các lỗi khác không phải 401 hoặc đã thử refresh
+    // For other errors, just reject
     console.error('API Error:', error.response?.data || error.message);
     return Promise.reject(error);
   }
