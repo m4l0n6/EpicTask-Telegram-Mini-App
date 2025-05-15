@@ -194,6 +194,27 @@ export const initializeTelegramApi = () => {
     window.Telegram = {
       WebApp: mockTelegramWebApp,
     };
+    
+    // Create a mock user for development
+    const mockUser = {
+      _id: "dev_user_id",
+      username: "dev_user",
+      telegramId: "123456789",
+      xp: 100,
+      level: 1,
+      tokens: 20,
+      avatar: "https://via.placeholder.com/150",
+      badges: [],
+      completedTasks: 0,
+      createdAt: new Date().toISOString(),
+      lastLoginAt: new Date().toISOString(),
+      dailyLoginStreak: 1
+    };
+    
+    // Store mock user in localStorage for API interceptors
+    if (!localStorage.getItem('user')) {
+      localStorage.setItem('user', JSON.stringify(mockUser));
+    }
   }
 
   return window.Telegram;

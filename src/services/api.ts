@@ -58,8 +58,7 @@ api.interceptors.response.use(
     }
     
     const originalRequest = error.config;
-    
-    // Đặc biệt cho môi trường phát triển khi gặp lỗi 401
+      // Đặc biệt cho môi trường phát triển khi gặp lỗi 401
     if (error.response.status === 401 && import.meta.env.DEV) {
       console.log("Development mode: Using local storage data instead of authentication");
       const storedUser = localStorage.getItem('user');
@@ -67,7 +66,29 @@ api.interceptors.response.use(
       if (storedUser && !originalRequest.url.includes('/auth/')) {
         // Sử dụng dữ liệu giả lập trong môi trường phát triển
         return Promise.resolve({ 
-          data: JSON.parse(storedUser)
+          data: originalRequest.url.includes('tasks') ? [] : JSON.parse(storedUser)
+        });
+      } else {
+        // Create a mock user if not available in DEV mode
+        const mockUser = {
+          _id: "dev_user_id",
+          username: "dev_user",
+          telegramId: "123456789",
+          xp: 100,
+          level: 1,
+          tokens: 20,
+          avatar: "https://via.placeholder.com/150",
+          badges: [],
+          completedTasks: 0,
+          createdAt: new Date().toISOString(),
+          lastLoginAt: new Date().toISOString(),
+          dailyLoginStreak: 1
+        };
+        localStorage.setItem('user', JSON.stringify(mockUser));
+        
+        // Return empty array for task requests, otherwise the mock user
+        return Promise.resolve({
+          data: originalRequest.url.includes('tasks') ? [] : mockUser
         });
       }
     }

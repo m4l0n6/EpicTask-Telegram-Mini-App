@@ -4,12 +4,16 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Link } from "react-router-dom";
 // import { useNotification } from "@/contexts/NotificationContext";
 import ConnectionStatus from "@/components/ui/ConnectionStatus";
+import { calculateXpProgress } from "@/utils/gamification";
 
 const Header: React.FC = () => {
   const { user } = useAuth();
   // const { unreadCount } = useNotification();
 
   if (!user) return null;
+
+  const xpProgress = calculateXpProgress(user);
+
   return (
     <header className="top-0 z-10 sticky bg-background/80 shadow-sm backdrop-blur-sm">
       <div className="mx-auto px-4 py-3 container">
@@ -78,7 +82,7 @@ const Header: React.FC = () => {
           <div className="bg-muted rounded-full w-full h-1 overflow-hidden">
             <div
               className="bg-gradient-to-r from-epic-purple to-epic-blue h-full duration-300 ease-in-out"
-              style={{ width: `30%` }}
+              style={{ width: `${xpProgress}%` }}
             ></div>
           </div>
         </div>

@@ -29,14 +29,15 @@ import { zodResolver } from "@hookform/resolvers/zod";
 // Định ng nghĩa lược đồ biểu mẫu với Zod
 const taskFormSchema = z.object({
   title: z.string().min(1, "Title is required").max(100, "Title is too long"),
-  description: z.string().max(500, "Description is too long"),
+  description: z.string().max(500, "Description is too long").optional(),
   deadline: z
     .date()
     .min(
       new Date(new Date().setHours(0, 0, 0, 0)),
       "Deadline must be in the future"
     )
-    .optional(),
+    .optional()
+    .nullable(),
   xpReward: z.coerce
     .number({ required_error: "XP reward is required" })
     .min(1, "Minimum XP reward is 1")
@@ -141,12 +142,18 @@ const TaskForm: React.FC<TaskFormProps> = ({
                       <CalendarIcon className="opacity-50 ml-auto w-4 h-4" />
                     </Button>
                   </FormControl>
-                </PopoverTrigger>
-                <PopoverContent className="p-0 w-auto" align="start">               
-                   <Calendar
+                </PopoverTrigger>                <PopoverContent className="p-0 w-auto" align="start">               
+                  <Calendar
                     mode="single"
                     selected={field.value ?? undefined}
-                    onSelect={(date) => field.onChange(date)}
+                    onSelect={(date) => {
+                      console.log("Date selected:", date);
+                      if (date) {
+                        field.onChange(date);
+                        // Force the form to update with the new value
+                        form.setValue("deadline", date, { shouldValidate: true });
+                      }
+                    }}
                     disabled={(date) =>
                       date < new Date(new Date().setHours(0, 0, 0, 0))
                     }
