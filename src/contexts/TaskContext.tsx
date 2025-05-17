@@ -4,6 +4,7 @@ import { Task } from "@/types";
 import { useAuth } from "./AuthContext";
 import { taskApi } from "@/services/api";
 import { toast } from "@/hooks/use-toast";
+import { notificationService } from "@/services/notificationService";
 
 import { useBadge } from "@/contexts/BadgeContext";
 
@@ -273,13 +274,8 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
       return;
     }
 
-    const taskToComplete = tasks.find((task) => task._id === taskId);
-    if (!taskToComplete) {
-      toast({
-        title: "Error",
-        description: "Task not found.",
-        variant: "destructive",
-      });
+    const taskToComplete = tasks.find((task) => task._id === taskId);    if (!taskToComplete) {
+      notificationService.notifyError("Task not found.");
       return;
     }
 
@@ -297,27 +293,15 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
             }
           : t
       )
-    );
-
-    // Hiển thị thông báo
-    toast({
-      title: "Task completed!",
-      description: `You earned ${xpGained} XP and ${tokenGained} tokens${
-        leveledUp ? " and leveled up!" : "!"
-      }`,
-      variant: "default",
-    });
+    );    // Hiển thị thông báo
+    notificationService.notifyTaskCompleted(xpGained, tokenGained, leveledUp);
 
     // Hiển thị thông báo về huy hiệu mới nếu có
     if (newBadges && Array.isArray(newBadges) && newBadges.length > 0) {
       // Thêm delay nhỏ để không hiển thị cùng lúc với toast trước đó
       setTimeout(() => {
         newBadges.forEach((badge) => {
-          toast({
-            title: "Badge Unlocked! 🎉",
-            description: `You've earned the "${badge.title}" badge!`,
-            variant: "default",
-          });
+          notificationService.notifyNewBadge(badge);
         });
       }, 500);
     }
@@ -326,14 +310,9 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
     await refreshBadges();
 
     // Tải lại danh sách nhiệm vụ để đồng bộ
-    loadTasks();
-  } catch (error) {
+    loadTasks();  } catch (error) {
     console.error("Error completing task:", error);
-    toast({
-      title: "Error",
-      description: "Failed to complete the task.",
-      variant: "destructive",
-    });
+    notificationService.notifyError("Failed to complete the task.");
   }
 };
 

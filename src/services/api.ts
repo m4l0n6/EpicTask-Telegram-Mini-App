@@ -341,9 +341,6 @@ export const taskApi = {
   },
 };
 
-// Import WebSocket service
-import { socketService } from './socket';
-
 export const authApi = {
   // Đăng nhập qua Telegram
   telegramLogin: async (data: TelegramAuthData): Promise<User> => {
@@ -353,8 +350,6 @@ export const authApi = {
     if (response.data && response.data.token) {
       localStorage.setItem(STORAGE_KEYS.AUTH_TOKEN, response.data.token);
       
-      // Kết nối WebSocket sau khi xác thực thành công
-      socketService.connect();
     }
     
     return response.data;
@@ -368,15 +363,11 @@ export const authApi = {
       localStorage.removeItem(STORAGE_KEYS.AUTH_TOKEN);
       localStorage.removeItem(STORAGE_KEYS.USER);
       
-      // Ngắt kết nối WebSocket
-      socketService.disconnect();
-      
       return response.data;
     } catch (error) {
       // Ngay cả khi API thất bại, vẫn nên dọn dẹp trạng thái cục bộ
       localStorage.removeItem(STORAGE_KEYS.AUTH_TOKEN);
       localStorage.removeItem(STORAGE_KEYS.USER);
-      socketService.disconnect();
       throw error;
     }
   },

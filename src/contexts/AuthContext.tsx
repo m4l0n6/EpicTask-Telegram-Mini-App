@@ -195,7 +195,6 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
     };
   }, [login]);
 
-  // Thêm useEffect để lắng nghe sự kiện tokens_added từ socket hoặc qua event system
   useEffect(() => {
     const handleTokensAdded = (event: CustomEvent) => {
       // Thêm log để debug
@@ -268,61 +267,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
     }
   };
 
-  // Định nghĩa ref cho biến theo dõi số lần kết nối lại và websocket
-  const retryCountRef = useRef(0);
-  const websocketRef = useRef<WebSocket | null>(null);
-
-  const connectWebSocket = () => {
-    // Không kết nối WebSocket trong môi trường phát triển
-    if (import.meta.env.DEV && !import.meta.env.VITE_ENABLE_WEBSOCKET) {
-      console.log("WebSocket disabled in development mode");
-      return;
-    }
-    
-    try {
-      const socket = new WebSocket("wss://epictask-backend.onrender.com");
-      
-      socket.onopen = () => {
-        console.log("WebSocket connected");
-        websocketRef.current = socket;
-      };
-      
-      socket.onclose = () => {
-        console.log("WebSocket disconnected");
-        websocketRef.current = null;
-        
-        // Giới hạn số lần thử kết nối lại
-        if (retryCountRef.current < 3) {
-          console.log(`Retrying WebSocket connection (${retryCountRef.current + 1}/3)...`);
-          retryCountRef.current++;
-          setTimeout(connectWebSocket, 5000); // Thử lại sau 5 giây
-        } else {
-          console.log("Max WebSocket retry attempts reached");
-        }
-      };
-      
-      socket.onerror = (error) => {
-        console.error("WebSocket error:", error);
-      };
-    } catch (error) {
-      console.error("Failed to create WebSocket connection:", error);
-    }
-  };
-
-  connectWebSocket();
-
-  useEffect(() => {
-    if (user) {
-      const socket = new WebSocket("wss://epictask-backend.onrender.com");
-      socket.onopen = () => {
-        console.log("WebSocket connected");
-        socket.send(JSON.stringify({ type: "authenticate", userId: user._id }));
-      };
-      socket.onclose = () => console.log("WebSocket disconnected");
-      return () => socket.close();
-    }
-  }, [user]);
-
+  
   return (
     <AuthContext.Provider value={{ user, isLoading, error, login, logout }}>
       {children}

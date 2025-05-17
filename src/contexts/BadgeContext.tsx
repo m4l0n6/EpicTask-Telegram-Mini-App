@@ -116,25 +116,8 @@ export const BadgeProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     } finally {
       setIsLoading(false);
     }
-  };
-
-  useEffect(() => {
+  };  useEffect(() => {
     refreshBadges();
-  }, []);
-
-  useEffect(() => {
-    // Lắng nghe sự kiện badge unlocked từ socket
-    const handleBadgeUnlocked = (event: CustomEvent) => {
-      console.log("Badge unlocked event received with:", event.detail?.badge);
-      refreshBadges();
-    };
-    
-    document.addEventListener('badgeUnlocked', handleBadgeUnlocked as EventListener);
-    
-    // Cleanup
-    return () => {
-      document.removeEventListener('badgeUnlocked', handleBadgeUnlocked as EventListener);
-    };
   }, []);
 
   return (

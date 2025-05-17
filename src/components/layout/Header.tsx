@@ -3,7 +3,6 @@ import React from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { Link } from "react-router-dom";
 // import { useNotification } from "@/contexts/NotificationContext";
-import ConnectionStatus from "@/components/ui/ConnectionStatus";
 import { calculateXpProgress } from "@/utils/gamification";
 
 const Header: React.FC = () => {
@@ -23,12 +22,7 @@ const Header: React.FC = () => {
             <span className="bg-clip-text bg-gradient-to-r from-epic-purple to-epic-blue font-bold text-2xl">
               EpicTasks
             </span>
-          </Link>
-
-          <div className="flex items-center space-x-3">
-            <div className="flex items-center">
-              <ConnectionStatus />
-            </div>
+          </Link>          <div className="flex items-center space-x-3">
             <div className="flex items-center">
               {/* Tính năng cửa hàng phát triển sau to="/store" */}
               <div className="flex items-center bg-epic-yellow/10 hover:bg-epic-yellow/20 px-3 py-1 border-epic-yellow/30 rounded-full">
