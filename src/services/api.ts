@@ -216,19 +216,23 @@ api.interceptors.response.use(
         data: {}
       });
     }
-    
-    // For non-development mode or when not using mocks
+      // For non-development mode or when not using mocks
     
     // If not a response error, just reject
     if (!error.response) {
       return Promise.reject(error);
-    }    // Handle 401 error (Unauthorized)
+    }
+    
+    // Handle 401 error (Unauthorized)
     if (error.response.status === 401 && !error.config._retry) {
       console.log("401 error, attempting to refresh authentication");
       
       error.config._retry = true; // Mark that we've attempted to retry
       
       try {
+        // Clear existing tokens since they're not working
+        localStorage.removeItem(STORAGE_KEYS.AUTH_TOKEN);
+        
         // Try to authenticate with Telegram in case session was lost
         const tg = window.Telegram?.WebApp;
         if (tg && tg.initData) {
@@ -241,10 +245,16 @@ api.interceptors.response.use(
             }
           };
           
+          console.log("Making POST request to: https://epictask-backend.onrender.com/api/v1/auth/telegram");
           const authResponse = await api.post("/auth/telegram", authData);
           
           if (authResponse.data) {
-            // Save user data and any tokens
+            // Save user data 
+            if (authResponse.data._id) {
+              localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(authResponse.data));
+            }
+            
+            // Save token if available
             if (authResponse.data.token) {
               localStorage.setItem(STORAGE_KEYS.AUTH_TOKEN, authResponse.data.token);
               
@@ -254,7 +264,10 @@ api.interceptors.response.use(
             }
           }
         } else if (isDev && useMockApiInDev) {
-          // Trong chế độ development với mock API, hãy thử lại yêu cầu
+          // In development mode with mock API, regenerate a new mock token
+          const mockToken = 'mock_auth_token_' + Date.now();
+          localStorage.setItem(STORAGE_KEYS.AUTH_TOKEN, mockToken);
+          error.config.headers["Authorization"] = `Bearer ${mockToken}`;
           return api(error.config);
         } else {
           console.error("No Telegram WebApp data available for reauthentication");
@@ -262,8 +275,11 @@ api.interceptors.response.use(
       } catch (refreshError) {
         console.error("Failed to refresh authentication:", refreshError);
         
-        // Nếu đang ở chế độ development với mock data, sử dụng mock data
+        // If in development mode with mock data, use mock data
         if (isDev && useMockApiInDev) {
+          const mockToken = 'mock_auth_token_' + Date.now();
+          localStorage.setItem(STORAGE_KEYS.AUTH_TOKEN, mockToken);
+          error.config.headers["Authorization"] = `Bearer ${mockToken}`;
           return api(error.config);
         }
       }
@@ -347,9 +363,16 @@ export const authApi = {
     const response = await api.post("/auth/telegram", data);
     
     // Lưu token nếu có
-    if (response.data && response.data.token) {
-      localStorage.setItem(STORAGE_KEYS.AUTH_TOKEN, response.data.token);
+    if (response.data) {
+      // Save the user data
+      if (response.data._id) {
+        localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(response.data));
+      }
       
+      // Save the token if available
+      if (response.data.token) {
+        localStorage.setItem(STORAGE_KEYS.AUTH_TOKEN, response.data.token);
+      }
     }
     
     return response.data;

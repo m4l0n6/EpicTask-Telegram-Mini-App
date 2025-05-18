@@ -15,6 +15,7 @@ import {
   processDailyLogin,
 } from "@/utils/gamification";
 import { authApi, userApi } from "@/services/api";
+import { STORAGE_KEYS } from "@/services/constants";
 
 interface AuthContextType {
   user: User | null;
@@ -35,13 +36,14 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
   const login = useCallback(async (): Promise<void> => {
     try {
       setIsLoading(true);
-      setError(null);
-
-      // Thử xác thực qua Telegram WebApp
+      setError(null);      // Thử xác thực qua Telegram WebApp
       const telegramWebApp = window.Telegram?.WebApp;
       
       if (telegramWebApp?.initDataUnsafe?.user) {
         try {
+          // Clear any existing tokens before login attempt
+          localStorage.removeItem(STORAGE_KEYS.AUTH_TOKEN);
+          
           // Gọi API đăng nhập với dữ liệu Telegram
           const userData = await authApi.telegramLogin({
             initData: telegramWebApp.initData,
@@ -56,6 +58,9 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
           
           setUser(userData);
           saveUser(userData);
+          
+          // Log successful login
+          console.log("Successfully authenticated with Telegram");
         } catch (err) {
           console.error("API đăng nhập Telegram thất bại:", err);
           
@@ -243,22 +248,26 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
       console.error("Error expanding Telegram WebApp:", err);
     }
   }, []);
-
   const logout = async (): Promise<void> => {
     try {
-      // Gọi API logout nếu cần
-      // await authApi.logout();
+      // Call the API logout
+      await authApi.logout();
       
-      // Xóa dữ liệu user
+      // Clear user data
       setUser(null);
-      localStorage.removeItem('user'); // Xóa user từ local storage
-
+      
       toast({
         title: "Logged Out",
         description: "You have been logged out successfully.",
       });
     } catch (err) {
       console.error("Logout failed:", err);
+      
+      // Even if API fails, clear local data
+      localStorage.removeItem(STORAGE_KEYS.USER);
+      localStorage.removeItem(STORAGE_KEYS.AUTH_TOKEN);
+      setUser(null);
+      
       toast({
         title: "Logout Failed",
         description: "Failed to logout properly.",
