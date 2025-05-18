@@ -9,13 +9,14 @@ import DailyPage from "./pages/DailyPage";
 import BadgesPage from "./pages/BadgesPage";
 import TasksPage from "./pages/TasksPage";
 import LeaderboardPage from "./pages/LeaderboardPage";
-// import NotificationsPage from "./pages/NotificationsPage";
+import NotificationsPage from "./pages/NotificationsPage";
 import StorePage from "./pages/StorePage";
 
 import { TaskProvider } from "./contexts/TaskContext";
 import { AuthProvider } from "./contexts/AuthContext";
 import { LeaderboardProvider } from "./contexts/LeaderboardContext";
 import { BadgeProvider } from "./contexts/BadgeContext";
+import { EnhancedNotificationProvider } from "./contexts/EnhancedNotificationContext";
 
 const App = () => (
   <BrowserRouter>
@@ -23,7 +24,7 @@ const App = () => (
       <BadgeProvider>
         <TaskProvider>
           <LeaderboardProvider>
-  
+            <EnhancedNotificationProvider>
               <Toaster />
               <Routes>
                 <Route path="/" element={<AppLayout />}>
@@ -32,16 +33,17 @@ const App = () => (
                   <Route path="tasks" element={<TasksPage />} />
                   <Route path="badges" element={<BadgesPage />} />
                   <Route path="leaderboard" element={<LeaderboardPage />} />
-                  {/* <Route
+                  <Route
                     path="notifications"
                     element={<NotificationsPage />}
-                  /> */}
+                  />
                   <Route path="profile" element={<ProfilePage />} />
                   <Route path="daily" element={<DailyPage />} />
                   <Route path="store" element={<StorePage />} />
                 </Route>
                 <Route path="*" element={<NotFound />} />
               </Routes>
+            </EnhancedNotificationProvider>
           </LeaderboardProvider>
         </TaskProvider>
       </BadgeProvider>

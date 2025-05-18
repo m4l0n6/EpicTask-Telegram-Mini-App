@@ -1,5 +1,5 @@
 import { toast } from "@/hooks/use-toast";
-import { Badge, User } from "@/types";
+import { Badge } from "@/types";
 import { addNotification } from "@/utils/storage";
 import { v4 as uuidv4 } from "uuid";
 
@@ -40,13 +40,22 @@ class NotificationService {
    * Notify when a user unlocks a new badge
    */
   notifyNewBadge(badge: Badge): void {
-    this.showNotification(
-      "Badge Unlocked! 🎉",
-      `You've earned the "${badge.title}" badge!`,
-      "default",
-      true,
-      "badge"
-    );
+    const badgeData = JSON.stringify({ badge });
+    
+    // Show toast notification
+    toast({
+      title: "Badge Unlocked! 🎉",
+      description: `You've earned the "${badge.title}" badge!`,
+    });
+
+    // Save to storage with badge data
+    addNotification({
+      id: uuidv4(),
+      type: "new_badge",
+      message: `You've earned the "${badge.title}" badge! ${badgeData}`,
+      read: false,
+      createdAt: new Date().toISOString(),
+    });
     
     // Dispatch event for other components
     document.dispatchEvent(
@@ -60,26 +69,44 @@ class NotificationService {
    * Notify when a user levels up
    */
   notifyLevelUp(oldLevel: number, newLevel: number): void {
-    this.showNotification(
-      "Level Up! 🎉",
-      `You've reached level ${newLevel}!`,
-      "default",
-      true,
-      "levelUp"
-    );
+    const levelData = JSON.stringify({ level: newLevel, oldLevel });
+    
+    // Show toast notification
+    toast({
+      title: "Level Up! 🎉",
+      description: `You've reached level ${newLevel}!`,
+    });
+
+    // Save to storage with level data
+    addNotification({
+      id: uuidv4(),
+      type: "level_up",
+      message: `You've reached level ${newLevel}! ${levelData}`,
+      read: false,
+      createdAt: new Date().toISOString(),
+    });
   }
 
   /**
    * Notify when tokens are added to a user
    */
   notifyTokensAdded(amount: number): void {
-    this.showNotification(
-      "Tokens Received",
-      `You've earned ${amount} tokens!`,
-      "default",
-      true,
-      "token"
-    );
+    const tokenData = JSON.stringify({ tokens: amount });
+    
+    // Show toast notification
+    toast({
+      title: "Tokens Received",
+      description: `You've earned ${amount} tokens!`,
+    });
+
+    // Save to storage with token data
+    addNotification({
+      id: uuidv4(),
+      type: "token",
+      message: `You've earned ${amount} tokens! ${tokenData}`,
+      read: false,
+      createdAt: new Date().toISOString(),
+    });
     
     // Dispatch event for other components
     document.dispatchEvent(
@@ -97,15 +124,30 @@ class NotificationService {
     tokenGained: number,
     leveledUp: boolean
   ): void {
-    this.showNotification(
-      "Task Completed!",
-      `You earned ${xpGained} XP and ${tokenGained} tokens${
+    const taskData = JSON.stringify({ 
+      xp: xpGained, 
+      tokens: tokenGained, 
+      leveledUp 
+    });
+    
+    // Show toast notification
+    toast({
+      title: "Task Completed!",
+      description: `You earned ${xpGained} XP and ${tokenGained} tokens${
         leveledUp ? " and leveled up!" : "!"
       }`,
-      "default",
-      true,
-      "taskCompleted"
-    );
+    });
+
+    // Save to storage with task data
+    addNotification({
+      id: uuidv4(),
+      type: "task_completed",
+      message: `You earned ${xpGained} XP and ${tokenGained} tokens${
+        leveledUp ? " and leveled up!" : "!"
+      } ${taskData}`,
+      read: false,
+      createdAt: new Date().toISOString(),
+    });
   }
 
   /**

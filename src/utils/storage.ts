@@ -138,6 +138,10 @@ export const markNotificationAsRead = (notificationId: string): void => {
   }
 };
 
+// Xóa tất cả thông báo
+export const clearAllNotifications = (): void => {
+  saveNotifications([]);
+};
 
 // Các chắc năng của bảng xếp hạng
 export const getUsers = (): User[] =>{

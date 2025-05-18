@@ -2,12 +2,13 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import React from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { Link } from "react-router-dom";
-// import { useNotification } from "@/contexts/NotificationContext";
+import { useNotifications } from "@/contexts/EnhancedNotificationContext";
 import { calculateXpProgress } from "@/utils/gamification";
+import { Bell } from "lucide-react";
 
 const Header: React.FC = () => {
   const { user } = useAuth();
-  // const { unreadCount } = useNotification();
+  const { unreadCount } = useNotifications();
 
   if (!user) return null;
 
@@ -30,11 +31,10 @@ const Header: React.FC = () => {
                 <span className="font-medium text-stone-950">
                   {user.tokens}
                 </span>
-              </div>
-            </div>
+              </div>            </div>
 
-            {/* Tính năng thông báo phát triển sau */}
-            {/* <Link
+            {/* Notification feature */}
+            <Link
               to="/notifications"
               className="relative hover:bg-accent p-2 rounded-full"
             >
@@ -44,7 +44,7 @@ const Header: React.FC = () => {
                   {unreadCount > 9 ? "9+" : unreadCount}
                 </span>
               )}
-            </Link> */}
+            </Link>
 
             {/* <Link to="/daily" className="hover:bg-accent p-2 rounded-full">
               <Calendar className="w-5 h-5" />
