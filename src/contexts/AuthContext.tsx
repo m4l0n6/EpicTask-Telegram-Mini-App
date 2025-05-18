@@ -32,11 +32,39 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
 }) => {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
-  const [error, setError] = useState<string | null>(null);
-  const login = useCallback(async (): Promise<void> => {
+  const [error, setError] = useState<string | null>(null);  const login = useCallback(async (): Promise<void> => {
     try {
       setIsLoading(true);
-      setError(null);      // Thử xác thực qua Telegram WebApp
+      setError(null);
+      
+      // Kiểm tra nếu đang ở chế độ DEV
+      if (import.meta.env.DEV) {
+        console.log("DEV mode: Using mock authentication");
+        
+        try {
+          // Gọi API đăng nhập với dữ liệu giả
+          const userData = await authApi.telegramLogin({
+            initData: "mock_init_data",
+            user: {
+              id: 12345678,
+              username: "dev_user",
+              first_name: "Dev",
+              last_name: "User",
+              photo_url: "https://via.placeholder.com/150",
+            }
+          });
+          
+          setUser(userData);
+          saveUser(userData);
+          console.log("Successfully authenticated with mock data");
+          return;
+        } catch (err) {
+          console.error("Mock login failed:", err);
+          // Nếu lỗi cũng không sao, sẽ tiếp tục với phương pháp khác
+        }
+      }
+      
+      // Thử xác thực qua Telegram WebApp
       const telegramWebApp = window.Telegram?.WebApp;
       
       if (telegramWebApp?.initDataUnsafe?.user) {

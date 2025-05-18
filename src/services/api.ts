@@ -63,13 +63,21 @@ const initMockData = () => {
     ];
     localStorage.setItem(STORAGE_KEYS.TASKS, JSON.stringify(mockTasks));
   }
+  
+  // Return the mock tasks for convenience
+  return JSON.parse(localStorage.getItem(STORAGE_KEYS.TASKS) || '[]');
 };
 
 // Initialize mock data right away in development mode
 if (isDev && useMockApiInDev) {
   initMockData();
+  
+  // Ensure there is always a valid auth token in development mode
+  if (!localStorage.getItem(STORAGE_KEYS.AUTH_TOKEN)) {
+    console.log("DEV mode: Creating new auth token");
+    localStorage.setItem(STORAGE_KEYS.AUTH_TOKEN, 'mock_auth_token_' + Date.now());
+  }
 }
-
 
 
 // Lấy URL API từ biến môi trường hoặc mặc định
@@ -95,8 +103,17 @@ api.interceptors.request.use(config => {
   if (tg && tg.initData) {
     config.headers['Telegram-Data'] = tg.initData;
   }
-    // Thêm token xác thực
-  const token = localStorage.getItem(STORAGE_KEYS.AUTH_TOKEN);
+  
+  // Thêm token xác thực
+  let token = localStorage.getItem(STORAGE_KEYS.AUTH_TOKEN);
+  
+  // Trong môi trường phát triển, tạo token mới nếu không có
+  if (isDev && useMockApiInDev && !token) {
+    token = 'mock_auth_token_' + Date.now();
+    localStorage.setItem(STORAGE_KEYS.AUTH_TOKEN, token);
+    console.log("Created new development token:", token);
+  }
+  
   if (token) {
     config.headers["Authorization"] = `Bearer ${token}`;
   }
@@ -222,8 +239,7 @@ api.interceptors.response.use(
     if (!error.response) {
       return Promise.reject(error);
     }
-    
-    // Handle 401 error (Unauthorized)
+      // Handle 401 error (Unauthorized)
     if (error.response.status === 401 && !error.config._retry) {
       console.log("401 error, attempting to refresh authentication");
       
@@ -232,6 +248,15 @@ api.interceptors.response.use(
       try {
         // Clear existing tokens since they're not working
         localStorage.removeItem(STORAGE_KEYS.AUTH_TOKEN);
+        
+        // Check if we're in development mode with mock API
+        if (isDev && useMockApiInDev) {
+          console.log("DEV mode: Using mock token");
+          const mockToken = 'mock_auth_token_' + Date.now();
+          localStorage.setItem(STORAGE_KEYS.AUTH_TOKEN, mockToken);
+          error.config.headers["Authorization"] = `Bearer ${mockToken}`;
+          return api(error.config);
+        }
         
         // Try to authenticate with Telegram in case session was lost
         const tg = window.Telegram?.WebApp;
@@ -247,8 +272,7 @@ api.interceptors.response.use(
           
           console.log("Making POST request to: https://epictask-backend.onrender.com/api/v1/auth/telegram");
           const authResponse = await api.post("/auth/telegram", authData);
-          
-          if (authResponse.data) {
+                if (authResponse.data) {
             // Save user data 
             if (authResponse.data._id) {
               localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(authResponse.data));
@@ -263,12 +287,6 @@ api.interceptors.response.use(
               return api(error.config);
             }
           }
-        } else if (isDev && useMockApiInDev) {
-          // In development mode with mock API, regenerate a new mock token
-          const mockToken = 'mock_auth_token_' + Date.now();
-          localStorage.setItem(STORAGE_KEYS.AUTH_TOKEN, mockToken);
-          error.config.headers["Authorization"] = `Bearer ${mockToken}`;
-          return api(error.config);
         } else {
           console.error("No Telegram WebApp data available for reauthentication");
         }
@@ -277,9 +295,17 @@ api.interceptors.response.use(
         
         // If in development mode with mock data, use mock data
         if (isDev && useMockApiInDev) {
+          console.log("DEV mode: Using mock token after refresh failure");
           const mockToken = 'mock_auth_token_' + Date.now();
           localStorage.setItem(STORAGE_KEYS.AUTH_TOKEN, mockToken);
           error.config.headers["Authorization"] = `Bearer ${mockToken}`;
+          
+          // Return mock data based on the requested endpoint
+          if (error.config.url?.includes('/tasks')) {
+            const mockTasks = initMockData();
+            return Promise.resolve({ data: mockTasks });
+          }
+          
           return api(error.config);
         }
       }
@@ -302,9 +328,27 @@ interface TelegramAuthData {
   };
 }
 
-export const taskApi = {
-  // Lấy tất cả task của người dùng hiện tại
+export const taskApi = {  // Lấy tất cả task của người dùng hiện tại
   getTasks: async (filters?: { completed?: boolean }) => {
+    // Nếu đang ở chế độ phát triển và sử dụng mock API, trả về dữ liệu mock trực tiếp
+    if (isDev && useMockApiInDev) {
+      try {
+        console.log("DEV mode: Using local mock data for tasks");
+        const tasks = JSON.parse(localStorage.getItem(STORAGE_KEYS.TASKS) || '[]');
+        
+        // Áp dụng bộ lọc nếu có
+        if (filters?.completed !== undefined) {
+          return tasks.filter((task: { completed: boolean }) => task.completed === filters.completed);
+        }
+        
+        return tasks;
+      } catch (error) {
+        console.error("Error getting mock tasks:", error);
+        return [];
+      }
+    }
+    
+    // Trong môi trường sản phẩm, gọi API thật
     const params = new URLSearchParams();
     if (filters?.completed !== undefined) {
       params.append("completed", String(filters.completed));
@@ -360,6 +404,40 @@ export const taskApi = {
 export const authApi = {
   // Đăng nhập qua Telegram
   telegramLogin: async (data: TelegramAuthData): Promise<User> => {
+    console.log("Calling telegramLogin with data:", JSON.stringify(data));
+    
+    // Kiểm tra nếu đang ở chế độ dev với mock API
+    if (isDev && useMockApiInDev) {
+      console.log("DEV mode: Using mock authentication");
+      // Generate mock token
+      const mockToken = 'mock_auth_token_' + Date.now();
+      localStorage.setItem(STORAGE_KEYS.AUTH_TOKEN, mockToken);
+      
+      // Get or create mock user
+      let mockUser = JSON.parse(localStorage.getItem(STORAGE_KEYS.USER) || '{}');
+      if (!mockUser._id) {
+        // Initialize default mock user if not exists
+        mockUser = {
+          _id: "dev_user_id",
+          username: "dev_user",
+          telegramId: "123456789",
+          xp: 100,
+          level: 1,
+          tokens: 20,
+          avatar: "https://via.placeholder.com/150",
+          badges: [],
+          completedTasks: 0,
+          createdAt: new Date().toISOString(),
+          lastLoginAt: new Date().toISOString(),
+        };
+        localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(mockUser));
+      }
+      
+      mockUser.token = mockToken; // Add token to the response
+      return mockUser;
+    }
+    
+    // Real API call for production
     const response = await api.post("/auth/telegram", data);
     
     // Lưu token nếu có
@@ -405,6 +483,24 @@ export const authApi = {
 export const userApi = {
   // Lấy thông tin profile
   getProfile: async (): Promise<User> => {
+    // Nếu đang ở chế độ phát triển và sử dụng mock API, trả về dữ liệu mock trực tiếp
+    if (isDev && useMockApiInDev) {
+      try {
+        console.log("DEV mode: Using local mock data for user profile");
+        const mockUser = JSON.parse(localStorage.getItem(STORAGE_KEYS.USER) || '{}');
+        if (!mockUser._id) {
+          // Nếu không có user, tạo mới
+          initMockData();
+          return JSON.parse(localStorage.getItem(STORAGE_KEYS.USER) || '{}');
+        }
+        return mockUser;
+      } catch (error) {
+        console.error("Error getting mock user:", error);
+        return {} as User;
+      }
+    }
+    
+    // Trong môi trường sản phẩm, gọi API thật
     const response = await api.get("/users/me");
     return response.data;
   },
