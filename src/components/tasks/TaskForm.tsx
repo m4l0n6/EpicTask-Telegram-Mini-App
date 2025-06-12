@@ -24,12 +24,15 @@ import { CalendarIcon } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { zodResolver } from "@hookform/resolvers/zod";
-// import { useTask } from "@/contexts/TaskContext";
+import { useTask } from "@/contexts/TaskContext";
 
 // Định ng nghĩa lược đồ biểu mẫu với Zod
 const taskFormSchema = z.object({
-  title: z.string().min(1, "Title is required").max(100, "Title is too long"),
-  description: z.string().max(500, "Description is too long"),
+  title: z.string().min(3, "Title is required").max(100, "Title is too long"),
+  description: z
+    .string()
+    .min(20, "Decription must be at least 10 characters minimum")
+    .max(500, "Description is too long"),
   deadline: z
     .date({
       required_error: "Deadline is required",
@@ -54,8 +57,8 @@ interface TaskFormProps {
 
 
 const TaskForm: React.FC<TaskFormProps> = ({ task, onSubmit, onCancel }) => {
-  // const { getTodayTasksCount } = useTask();
-  // const tasksToday = getTodayTasksCount();
+  const { getTodayTasksCount } = useTask();
+  const tasksToday = getTodayTasksCount();
 
   const defaultValues: Partial<TaskFormValues> = {
     title: task?.title || "",
@@ -174,17 +177,17 @@ const TaskForm: React.FC<TaskFormProps> = ({ task, onSubmit, onCancel }) => {
           )}
         />
 
-        {/* {!task && (
+        {!task && (
           <FormDescription>
             You've created {tasksToday}/10 tasks today
           </FormDescription>
-        )} */}
+        )}
 
         <div className="flex justify-end gap-2">
           <Button type="button" variant="outline" onClick={onCancel}>
             Cancel
           </Button>
-          <Button type="submit">{task ? "Update Task" : "Create Task"}</Button>
+          <Button type="submit" className='bg-epic-purple hover:bg-epic-purple/90'>{task ? "Update Task" : "Create Task"}</Button>
         </div>
       </form>
     </Form>

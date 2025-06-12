@@ -1,5 +1,5 @@
 import React, { useEffect } from "react";
-import { useLeaderboard } from "@/contexts/LeaderboardContext";
+import { useLeaderboard } from "@/hooks/useLeaderboard";
 import { useAuth } from "@/contexts/AuthContext";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -11,7 +11,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Trophy, Medal, Award, X, RefreshCw } from "lucide-react";
+import { Trophy, Medal, Award, RefreshCw } from "lucide-react";
 import Loading from "../ui/Loading";
 import { Button } from "@/components/ui/button";
 
@@ -19,7 +19,6 @@ const LeaderboardTable: React.FC = () => {
   const { leaderboard, isLoading, refreshLeaderboard } =
     useLeaderboard();
   const { user } = useAuth();
-
   useEffect(() => {
     refreshLeaderboard(); 
   }, []);
@@ -87,15 +86,7 @@ const LeaderboardTable: React.FC = () => {
   return (
     <Card>
       <CardHeader className="relative">
-        <Button
-          variant="ghost"
-          size="icon"
-          className="top-2 right-2 absolute"
-          onClick={() => window.history.back()}
-        >
-          <X className="w-5 h-5" />
-          <span className="sr-only">Close</span>
-        </Button>
+
         <CardTitle className="text-center">EpicTasks Leaderboard</CardTitle>
       </CardHeader>
       <CardContent>
@@ -144,10 +135,8 @@ const LeaderboardTable: React.FC = () => {
                         {entry.username} {isCurrentUser && "(You)"}
                       </span>
                     </div>
-                  </TableCell>
-                  <TableCell className="font-medium text-right">
-                    {entry.level || "N/A"}{" "}
-                    {/* Hiển thị "N/A" nếu không có level */}
+                  </TableCell>                  <TableCell className="font-medium text-right">
+                    {Math.floor(entry.xp / 100) + 1} {/* Calculate level based on XP */}
                   </TableCell>
                   <TableCell className="font-medium text-right">
                     {entry.xp || 0} {/* Hiển thị 0 nếu không có xp */}
@@ -190,9 +179,8 @@ const LeaderboardTable: React.FC = () => {
                         {userRankEntry.username} (You)
                       </span>
                     </div>
-                  </TableCell>
-                  <TableCell className="font-medium text-right">
-                    {userRankEntry.level}
+                  </TableCell>                  <TableCell className="font-medium text-right">
+                    {Math.floor(userRankEntry.xp / 100) + 1} {/* Calculate level based on XP */}
                   </TableCell>
                   <TableCell className="font-medium text-right">
                     {userRankEntry.xp}

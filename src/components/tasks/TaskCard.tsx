@@ -165,14 +165,13 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, onEdit }) => {
 
         <CardFooter className="pt-1">
           {task.completed ? (
-            <div className="w-full text-muted-foreground text-xs text-right">
-              <span className="flex justify-end items-center">
-                <Award className="mr-1 w-3 h-3 text-epic-green" />
-                Completed{" "}
-                {/* {formatDistanceToNow(parseISO(task.completedAt!), {
-                  addSuffix: true,
-                })} */}
-              </span>
+            <div className="flex justify-between gap-2 w-full">
+              <div className="w-full text-muted-foreground text-xs text-right">
+                <span className="flex justify-end items-center">
+                  <Award className="mr-1 w-3 h-3 text-epic-green" />
+                  Completed
+                </span>
+              </div>
             </div>
           ) : (
             <div className="flex justify-between gap-2 w-full">

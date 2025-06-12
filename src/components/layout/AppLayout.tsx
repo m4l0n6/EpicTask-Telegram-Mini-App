@@ -1,5 +1,5 @@
 import React from "react";
-import Header from "./Header";
+import Header from "./HeaderNew";
 import { useAuth } from "@/contexts/AuthContext";
 import Footer from "./Footer";
 import Loading from "../ui/Loading";

@@ -198,7 +198,10 @@ const TaskList: React.FC = () => {
                   ))}
                   <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
                     <DialogTrigger asChild>
-                      <Button className="sm:col-span-2 sm:w-[50%]" size="sm">
+                      <Button
+                        className="sm:col-span-2 bg-epic-purple hover:bg-epic-purple/90 sm:w-[50%]"
+                        size="sm"
+                      >
                         <Plus className="mr-1 w-4 h-4" />
                         Add new Task
                       </Button>
@@ -221,7 +224,7 @@ const TaskList: React.FC = () => {
               {sortedTasks.length === 0 ? (
                 <div className="py-10 text-center">
                   <p className="mb-4 text-muted-foreground">No active tasks</p>
-                  <Button onClick={() => setShowAddDialog(true)}>
+                  <Button onClick={() => setShowAddDialog(true)} className="bg-epic-purple hover:bg-epic-purple/90">
                     Add a new task
                   </Button>
                 </div>

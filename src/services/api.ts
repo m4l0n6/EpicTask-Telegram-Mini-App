@@ -105,30 +105,6 @@ export const userApi = {
     console.log("User Profile:", response.data); // Log thông tin người dùng
     return response.data;
   },
-
-  addXp: async (amount: number) => {
-    const response = await api.post("/users/xp", { amount });
-    return response.data;
-  },
-
-  addTokens: async (amount: number) => {
-    const response = await api.post("/users/tokens", { amount });
-    return response.data;
-  },
-
-  addNotification: async (notification: Notification) => {
-    const response = await api.post("/users/notifications", notification);
-    return response.data;
-  },
-
-  processDailyLogin: async (): Promise<{
-    isFirstLogin: boolean;
-    tokensAwarded: number;
-    currentStreak: number;
-  }> => {
-    const response = await api.post("/auth/daily-login");
-    return response.data;
-  },
 };
 
 // Các API liên quan đến bảng xếp hạng

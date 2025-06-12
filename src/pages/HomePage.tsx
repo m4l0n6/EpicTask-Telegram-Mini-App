@@ -5,7 +5,6 @@ import { Badge } from "../components/ui/badge";
 import { useTask } from "@/contexts/TaskContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "../components/ui/card";
-import { Progress } from "../components/ui/progress";
 import { Button } from "../components/ui/button";
 import {
   Dialog,
@@ -14,16 +13,10 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import TaskForm from "@/components/tasks/TaskForm";
-import LevelUp from "@/components/ui/LevelUp";
-import { calculateXpProgress } from "@/utils/gamification";
-import { Sparkles, Crown, Flame, CirclePlus, Trophy, Swords, CheckCircle } from "lucide-react";
+import { Sparkles, Crown, CirclePlus, Trophy, Swords, CheckCircle } from "lucide-react";
 
 const HomePage: React.FC = () => {
   const [showAddDialog, setShowAddDialog] = useState(false);
-  const [showLevelUp, setShowLevelUp] = useState(false);
-  // const [showXpGain, setShowXpGain] = useState(false);
-  // const [xpAmount, setXpAmount] = useState(0);
-  const [newLevel, setNewLevel] = useState(1);
 
   const { tasks, getTodayTasksCount, addTask } = useTask();
   const { user } = useAuth();
@@ -74,12 +67,6 @@ const HomePage: React.FC = () => {
     }
   };
 
-  const simulateLevelUp = () => {
-    setNewLevel(2);
-    setShowLevelUp(true);
-  };
-
-  const xpProgress = user ? calculateXpProgress(user) : 0;
 
   const getLevelDisplayClass = () => {
     if (!user) return "bg-gradient-to-r from-epic-yellow to-amber-400";
@@ -117,28 +104,10 @@ const HomePage: React.FC = () => {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="space-y-2">
-            <div className="flex justify-between items-center">
-              <span className="flex items-center font-medium text-sm">
-                <Flame className="mr-1 w-4 h-4 text-epic-purple" />
-                Experience Progress
-              </span>
-              <span className="text-muted-foreground text-sm">
-                {100 - xpProgress}% to Level {user?.level ? user.level + 1 : 1}
-              </span>
-            </div>
-            <div className="relative bg-primary/20 rounded-full h-2 overflow-hidden">
-              <Progress
-                value={xpProgress}
-                className="absolute inset-0 h-full transition-all animate-pulse"
-              />
-            </div>
-          </div>
-
-          <div className="flex justify-between mt-6">
+          <div className="flex justify-between">
             <div className="bg-muted/30 p-3 rounded-lg text-center hover:scale-105 transition-transform transform">
               <p className="font-bold text-3xl">{getTodayTasksCount()}/10</p>
-              <p className="text-muted-foreground text-sm">Daily Quests</p>
+              <p className="text-muted-foreground text-sm">Daily Tasks</p>
             </div>
             <div className="bg-muted/30 p-3 rounded-lg text-center hover:scale-105 transition-transform transform">
               <p className="font-bold text-epic-green text-3xl">
@@ -169,15 +138,17 @@ const HomePage: React.FC = () => {
           Start New Quest
         </Button>
         {/* Xem bảng xếp hạng */}
-        <Button
-          variant="outline"
-          size="lg"
-          className="hover:bg-epic-yellow/10 shadow-md border-2 border-epic-yellow/50 h-16 transition-all hover:translate-y-[-2px] cursor-pointer transform"
-          onClick={simulateLevelUp}
-        >
-          <Trophy className="mr-2 w-5 h-5 text-epic-yellow" />
-          View Leaderboard
-        </Button>
+        <Link to="/leaderboard" className="w-full">
+          <Button
+            variant="outline"
+            size="lg"
+            className="hover:bg-epic-yellow/10 shadow-md border-2 border-epic-yellow/50 w-full h-16 transition-all hover:translate-y-[-2px] cursor-pointer transform"
+
+          >
+            <Trophy className="mr-2 w-5 h-5 text-epic-yellow" />
+            View Leaderboard
+          </Button>
+        </Link>
       </div>
 
       {/* Thông báo mới nhất */}
@@ -185,7 +156,7 @@ const HomePage: React.FC = () => {
         <div className="flex justify-between items-center mb-3">
           <h2 className="flex items-center font-bold text-xl">
             <Swords className="mr-2 w-5 h-5 text-epic-purple" />
-            Active Quests
+            Active Tasks
           </h2>
           <Link to="/tasks">
             <Button
@@ -201,12 +172,12 @@ const HomePage: React.FC = () => {
         {recentTasks.length === 0 ? (
           <Card className="border-2 border-epic-purple/30 border-dashed">
             <CardContent className="py-8 text-center">
-              <p className="mb-4 text-muted-foreground">No active quests</p>
+              <p className="mb-4 text-muted-foreground">No active tasks</p>
               <Button
                 onClick={() => setShowAddDialog(true)}
                 className="bg-epic-purple hover:bg-epic-purple/90"
               >
-                Start your first quest
+                Start your first task
               </Button>
             </CardContent>
           </Card>
@@ -274,18 +245,7 @@ const HomePage: React.FC = () => {
         </DialogContent>
       </Dialog>
 
-      {showLevelUp && (
-        <LevelUp level={newLevel} onComplete={() => setShowLevelUp(false)} />
-      )}
     </div>
-
-    // Phần trang chủ khi chưa đăng nhập
-    // <div className="flex flex-col justify-center items-center bg-gradient-to-r from-epic-purple to-epic-blue h-screen">
-    // <h1 className="font-bold text-white text-4xl">Welcome to EpicTasks!</h1>
-    // <p className="mt-4 text-white text-lg">
-    //     Your task management solution for the Epic Web3 world.
-    // </p>
-    // </div>
   );
 }
 

@@ -2,7 +2,8 @@ import React from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTask } from "@/contexts/TaskContext";
-import { useLeaderboard } from "@/contexts/LeaderboardContext";
+import { useBadge } from "@/contexts/BadgeContext";
+import { useLeaderboard } from "@/hooks/useLeaderboard";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { formatDistance } from "date-fns";
@@ -14,6 +15,7 @@ const ProfileCard: React.FC = () => {
   const { user, logout } = useAuth();
   const { getCompletedTasksCount } = useTask();
   const { userRank } = useLeaderboard();
+  const { unlockedBadges } = useBadge();
 
   const completedTasks = getCompletedTasksCount();
   const xpProgress = user ? calculateXpProgress(user) : 0;
@@ -47,11 +49,11 @@ const ProfileCard: React.FC = () => {
           <div className="flex justify-between items-center">
             <span className="font-medium text-sm">Level {user.level}</span>
             <span className="text-muted-foreground text-sm">
-              {xpInCurrentLevel} / {100} XP to Level 100
+              {xpInCurrentLevel} / {100} XP to Level {user.level + 1}
             </span>
           </div>
           <Progress value={xpProgress} className="h-2" />
-          <div className="flex justify-between text-muted-foreground text-xs">
+          <div className="flex justify-between text-muted-foreground text-base">
             <span>Total: {user.xp} XP</span>
             <span>Next: {xpForNext} XP</span>
           </div>
@@ -73,7 +75,7 @@ const ProfileCard: React.FC = () => {
 
           <div className="flex flex-col items-center bg-muted/30 p-3 rounded-lg">
             <Award className="mb-1 w-6 h-6 text-epic-purple" />
-            <span className="font-bold text-xl">100</span>
+            <span className="font-bold text-xl">{unlockedBadges.length}</span>
             <span className="text-muted-foreground text-xs">Badges</span>
           </div>
         </div>

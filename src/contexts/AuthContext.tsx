@@ -9,10 +9,6 @@ import { User } from "@/types";
 import { initializeTelegramApi } from "@/utils/telegramMock"; // Vẫn giữ phần khởi tạo API Telegram
 import { getUser, saveUser } from "@/utils/storage";
 import { toast } from "@/hooks/use-toast";
-import {
-  processDailyLogin,
-//   refreshDailyTasksIfNeeded,
-} from "@/utils/gamification";
 import { authApi, userApi } from "@/services/api";
 
 interface AuthContextType {
@@ -42,23 +38,6 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
         // Kiểm tra xem đã có session với backend chưa
         const profile = await userApi.getProfile();
         setUser(profile);
-
-        // Xử lý daily login rewards
-        try {
-          const { isFirstLogin, tokensAwarded, currentStreak } =
-            await processDailyLogin(); // Thêm await để đảm bảo xử lý đúng thứ tự
-
-          if (isFirstLogin && tokensAwarded > 0) {
-            toast({
-              title: "Daily Login Reward!",
-              description: `You received ${tokensAwarded} tokens for logging in today! Current streak: ${currentStreak} days.`,
-            });
-          }
-
-        //   refreshDailyTasksIfNeeded();
-        } catch (err) {
-          console.error("Error processing daily login:", err);
-        }
       } catch (err) {
         // Không có session hoặc session hết hạn
         // Kiểm tra local storage để fallback
@@ -101,57 +80,39 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
           photo_url: telegramUser.photo_url,
         });
 
-        // Lưu thông tin user
         setUser(userData);
-        saveUser(userData); // Backup trong local storage
-      } else {
-        // Fallback cho development - sử dụng mock data
-        console.warn("Using mock Telegram login for development");
-        const mockTelegramLogin = (await import("@/utils/telegramMock"))
-          .mockTelegramLogin;
-        const loggedInUser = await mockTelegramLogin();
-
-        // Gọi API đăng nhập/đăng ký với mock data
-        try {
-          const userData = await authApi.telegramLogin({
-            id: parseInt(loggedInUser._id || ""),
-            username: loggedInUser.username,
-            photo_url: loggedInUser.avatar,
-          });
-
-          setUser(userData);
-          saveUser(userData);
-        } catch (apiErr) {
-          console.error("API login failed, using mock user:", apiErr);
-          setUser(loggedInUser);
-          saveUser(loggedInUser);
-        }
-      }
-
-      // Xử lý daily login
-      const { isFirstLogin, tokensAwarded, currentStreak } =
-        await processDailyLogin();
-
-      if (isFirstLogin && tokensAwarded > 0) {
+        saveUser(userData); // Lưu vào local storage để fallback
         toast({
-          title: "Daily Login Reward!",
-          description: `You received ${tokensAwarded} tokens for logging in today! Current streak: ${currentStreak} days.`,
+          title: "Login successful!",
+          description: "Welcome back Epic Task!",
+        });
+      } else {
+        // Trong môi trường dev (không phải Telegram), sử dụng mock user
+        console.log("Sử dụng mock Telegram user data");
+        
+        // Mock telegram user
+        const mockTelegramUser = {
+          id: 12345678,
+          username: "testuser",
+          first_name: "Test",
+          last_name: "User",
+          photo_url: "https://i.pravatar.cc/150?u=testuser",
+        };
+
+        const userData = await authApi.telegramLogin(mockTelegramUser);
+        setUser(userData);
+        saveUser(userData);
+        toast({
+          title: "Dev login successful",
+          description: "Logged in with mock user data",
         });
       }
-
-    //   refreshDailyTasksIfNeeded();
-
+    } catch (err: any) {
+      console.error("Login error:", err);
+      setError(err.message || "Failed to login");
       toast({
-        title: "Login Successful",
-        description: `Welcome back, ${user?.first_name}!`,
-      });
-    } catch (err) {
-      const errorMessage =
-        err instanceof Error ? err.message : "Failed to login";
-      setError(errorMessage);
-      toast({
-        title: "Login Failed",
-        description: errorMessage,
+        title: "Login failed",
+        description: err.message || "An error occurred during login",
         variant: "destructive",
       });
     } finally {
@@ -159,14 +120,13 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
     }
   };
 
-  const logout = async (): Promise<void> => {
-    // Trong ứng dụng Telegram Mini App thực tế, không cần logout
-    // Nhưng bạn vẫn nên xóa session phía backend
+  const logout = () => {
     setUser(null);
-
+    // Xóa thông tin người dùng khỏi localStorage
+    localStorage.removeItem("user");
     toast({
-      title: "Logged Out",
-      description: "You have been logged out successfully.",
+      title: "Logged out",
+      description: "You have successfully logged out.",
     });
   };
 

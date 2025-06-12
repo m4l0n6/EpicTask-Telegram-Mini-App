@@ -17,10 +17,10 @@ export const mockTelegramWebApp = {
     query_id: "mock_query_id",
     user: {
       id: 12345678,
-      first_name: "Long",
-      last_name: "Ma",
-      username: "malong",
-      language_code: "vn",
+      first_name: "Test",
+      last_name: "User",
+      username: "testuser",
+      language_code: "en",
       photo_url: "https://i.pravatar.cc/100?u=epicuser"
     },
     auth_date: new Date().getTime() / 1000,

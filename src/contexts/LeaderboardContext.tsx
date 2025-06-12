@@ -1,6 +1,5 @@
 import React, {
   createContext,
-  useContext,
   useState,
   useEffect,
   ReactNode,
@@ -9,16 +8,14 @@ import { Leaderboard } from "@/types";
 import { leaderboardApi } from "@/services/api";
 import { useAuth } from "./AuthContext";
 
-interface LeaderboardContextType {
+export interface LeaderboardContextType {
   leaderboard: Leaderboard[];
   userRank: number | null;
   isLoading: boolean;
   refreshLeaderboard: () => void;
 }
 
-const LeaderboardContext = createContext<LeaderboardContextType | undefined>(
-  undefined
-);
+export const LeaderboardContext = createContext<LeaderboardContextType | undefined>(undefined);
 
 export const LeaderboardProvider: React.FC<{ children: ReactNode }> = ({
   children,
@@ -35,12 +32,27 @@ export const LeaderboardProvider: React.FC<{ children: ReactNode }> = ({
       setIsLoading(false);
     }
   }, [user]);
-
   const loadLeaderboard = async () => {
     setIsLoading(true);
     try {
-      const leaderboardData = await leaderboardApi.getLeaderboard();
-      setLeaderboard(leaderboardData);
+      const rawLeaderboardData = await leaderboardApi.getLeaderboard();
+        // Map the backend data structure to our frontend Leaderboard type
+      const formattedLeaderboard = rawLeaderboardData.map((entry: {
+        userId: string;
+        username: string;
+        avatar?: string;
+        score?: number;
+        rank: number;
+      }) => ({
+        userId: entry.userId,
+        username: entry.username,
+        avatarUrl: entry.avatar, // Map avatar to avatarUrl
+        xp: entry.score || 0,    // Map score to xp
+        level: Math.floor((entry.score || 0) / 100) + 1, // Calculate level based on XP
+        rank: entry.rank
+      }));
+      
+      setLeaderboard(formattedLeaderboard);
     } catch (error) {
       console.error("Failed to load leaderboard:", error);
     } finally {
@@ -71,10 +83,4 @@ export const LeaderboardProvider: React.FC<{ children: ReactNode }> = ({
   );
 };
 
-export const useLeaderboard = (): LeaderboardContextType => {
-  const context = useContext(LeaderboardContext);
-  if (context === undefined) {
-    throw new Error("useLeaderboard must be used within a LeaderboardProvider");
-  }
-  return context;
-};
+// useLeaderboard hook has been moved to src/hooks/useLeaderboard.ts
