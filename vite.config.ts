@@ -4,11 +4,12 @@ import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import basicSsl from "@vitejs/plugin-basic-ssl";
 
+// https://vite.dev/config/
 export default defineConfig(({ mode }) => ({
   plugins: [
     react(),
     tailwindcss(),
-    mode === 'development' && basicSsl(), // chỉ dùng SSL plugin khi ở local dev
+    mode === "development" && basicSsl(), // chỉ bật SSL khi đang chạy dev
   ].filter(Boolean),
   resolve: {
     alias: {
@@ -16,7 +17,7 @@ export default defineConfig(({ mode }) => ({
     },
   },
   server: {
-    https: mode === 'development' ? {} : false,
-    host: true
+    host: true,
+    https: mode === "development" ? {} : false, // bật https local dev
   },
 }));
