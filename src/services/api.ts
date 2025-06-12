@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 // Lấy URL API từ biến môi trường hoặc mặc định
-const API_BASE_URL = import.meta.env.VITE_API_URL + '/api/v1' || 'http://localhost:3000/api/v1';
+const API_BASE_URL = import.meta.env.VITE_API_URL;
 
 console.log('Using API URL:', API_BASE_URL); 
 

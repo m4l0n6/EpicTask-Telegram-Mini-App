@@ -2,16 +2,21 @@ import path from "path";
 import tailwindcss from "@tailwindcss/vite";
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
+import basicSsl from "@vitejs/plugin-basic-ssl";
 
-// https://vite.dev/config/
-export default defineConfig({
-  plugins: [react(), tailwindcss()],
+export default defineConfig(({ mode }) => ({
+  plugins: [
+    react(),
+    tailwindcss(),
+    mode === 'development' && basicSsl(), // chỉ dùng SSL plugin khi ở local dev
+  ].filter(Boolean),
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
     },
   },
   server: {
-    allowedHosts: ["67b9-1-53-37-127.ngrok-free.app"],
+    https: mode === 'development' ? {} : false,
+    host: true
   },
-});
+}));
