@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 // Lấy URL API từ biến môi trường hoặc mặc định
-const API_BASE_URL = import.meta.env.VITE_API_URL;
+const API_BASE_URL = import.meta.env.VITE_API_URL + '/api/v1' || 'http://localhost:3000/api/v1';
 
 console.log('Using API URL:', API_BASE_URL); 
 
@@ -84,18 +84,32 @@ export const taskApi = {
 };
 
 export const authApi = {
-  // Đăng nhập qua Telegram
-  telegramLogin: async (telegramData: {
-    id: number;
-    username: string;
-    first_name?: string;
-    last_name?: string;
-    photo_url?: string;
-  }) => {
+  // Đăng nhập qua Telegram với initData hoàn chỉnh
+  telegramLogin: async (
+    telegramData:
+      | {
+          id: number;
+          username?: string;
+          first_name?: string;
+          last_name?: string;
+          photo_url?: string;
+        }
+      | string
+  ) => {
+    // Nếu là string, đó là initData hoàn chỉnh
+    if (typeof telegramData === "string") {
+      const response = await api.post("/auth/telegram", {
+        initData: telegramData,
+      });
+      return response.data;
+    }
+
+    // Nếu là object, đó là dữ liệu mock hoặc đã trích xuất
     const response = await api.post("/auth/telegram", { user: telegramData });
     return response.data;
   },
 };
+
 
 // Các API liên quan đến người dùng
 export const userApi = {
