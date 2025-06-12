@@ -24,8 +24,6 @@ export interface User {
   level: number;
   badges: Badge[];
   completedTasks: number;
-  lastDailyLogin?: string | null;
-  dailyLoginStreak?: number;
   lastTaskRefresh?: string | null;
   createdAt: string;
   updatedAt?: string;

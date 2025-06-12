@@ -5,6 +5,7 @@ import { Badge } from "../components/ui/badge";
 import { useTask } from "@/contexts/TaskContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "../components/ui/card";
+import { MAX_TASKS_PER_DAY } from "@/utils/gamification";
 import { Button } from "../components/ui/button";
 import {
   Dialog,
@@ -17,8 +18,9 @@ import { Sparkles, Crown, CirclePlus, Trophy, Swords, CheckCircle } from "lucide
 
 const HomePage: React.FC = () => {
   const [showAddDialog, setShowAddDialog] = useState(false);
-
   const { tasks, getTodayTasksCount, addTask } = useTask();
+  const tasksToday = getTodayTasksCount();
+  const remainingTasksToday = MAX_TASKS_PER_DAY - tasksToday;
   const { user } = useAuth();
 
   const recentTasks = tasks
@@ -106,7 +108,7 @@ const HomePage: React.FC = () => {
         <CardContent>
           <div className="flex justify-between">
             <div className="bg-muted/30 p-3 rounded-lg text-center hover:scale-105 transition-transform transform">
-              <p className="font-bold text-3xl">{getTodayTasksCount()}/10</p>
+              <p className="font-bold text-3xl">{getTodayTasksCount()}/5</p>
               <p className="text-muted-foreground text-sm">Daily Tasks</p>
             </div>
             <div className="bg-muted/30 p-3 rounded-lg text-center hover:scale-105 transition-transform transform">
@@ -135,7 +137,9 @@ const HomePage: React.FC = () => {
           onClick={() => setShowAddDialog(true)}
         >
           <CirclePlus className="mr-2 w-5 h-5" />
-          Start New Quest
+          {remainingTasksToday > 0
+            ? `Add Task (${remainingTasksToday}/${MAX_TASKS_PER_DAY} left)`
+            : "Daily limit reached"}
         </Button>
         {/* Xem bảng xếp hạng */}
         <Link to="/leaderboard" className="w-full">
@@ -143,7 +147,6 @@ const HomePage: React.FC = () => {
             variant="outline"
             size="lg"
             className="hover:bg-epic-yellow/10 shadow-md border-2 border-epic-yellow/50 w-full h-16 transition-all hover:translate-y-[-2px] cursor-pointer transform"
-
           >
             <Trophy className="mr-2 w-5 h-5 text-epic-yellow" />
             View Leaderboard
@@ -195,7 +198,7 @@ const HomePage: React.FC = () => {
                   key={task._id}
                   className={`task-card-hover border-2 ${borderClass} transform hover:translate-x-1 transition-all`}
                 >
-                  <CardContent className="p-4">
+                  <CardContent>
                     <div className="flex justify-between items-start">
                       <div>
                         <h3 className="font-medium">{task.title}</h3>
@@ -244,7 +247,6 @@ const HomePage: React.FC = () => {
           />
         </DialogContent>
       </Dialog>
-
     </div>
   );
 }

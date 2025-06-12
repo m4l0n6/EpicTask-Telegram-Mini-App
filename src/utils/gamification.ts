@@ -15,6 +15,9 @@ import { taskApi } from "@/services/api";
 export const XP_PER_LEVEL = 100;
 export const MAX_LEVEL = 50;
 
+// Định nghĩa giới hạn task hàng ngày
+export const MAX_TASKS_PER_DAY = 5;
+
 // Initialize default badges for the application
 export const initializeDefaultBadges = (): Badge[] => {
   const defaultBadges: Badge[] = [

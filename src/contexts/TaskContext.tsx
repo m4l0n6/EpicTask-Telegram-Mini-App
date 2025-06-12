@@ -27,6 +27,7 @@ interface TaskContextType {
 }
 
 const TaskContext = createContext<TaskContextType | undefined>(undefined);
+const MAX_TASKS_PER_DAY = 5;
 
 export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [tasks, setTasks] = useState<Task[]>([]);
@@ -76,10 +77,10 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }
 
   // Check if user has reached the daily limit (10 tasks)
-  if (getTodayTasksCount() >= 10) {
+  if (getTodayTasksCount() >= MAX_TASKS_PER_DAY) {
     toast({
       title: "Daily Limit Reached",
-      description: "You can only create 10 tasks per day to prevent cheating.",
+      description: `You can only create ${MAX_TASKS_PER_DAY} tasks per day to maintain balance.`,
       variant: "destructive",
     });
     return;

@@ -23,6 +23,7 @@ import { Calendar } from "@/components/ui/calendar";
 import { CalendarIcon } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
+import { MAX_TASKS_PER_DAY } from "@/utils/gamification";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useTask } from "@/contexts/TaskContext";
 
@@ -55,10 +56,14 @@ interface TaskFormProps {
   onSubmit: (values: TaskFormValues) => void;
 }
 
-
-const TaskForm: React.FC<TaskFormProps> = ({ task, onSubmit, onCancel }) => {
+export default function TaskForm({
+  task,
+  onSubmit,
+  onCancel,
+}: TaskFormProps) {
   const { getTodayTasksCount } = useTask();
   const tasksToday = getTodayTasksCount();
+  const remainingTasksToday = MAX_TASKS_PER_DAY - tasksToday;
 
   const defaultValues: Partial<TaskFormValues> = {
     title: task?.title || "",
@@ -83,6 +88,20 @@ const TaskForm: React.FC<TaskFormProps> = ({ task, onSubmit, onCancel }) => {
         className="space-y-4"
         onSubmit={form.handleSubmit(handleSubmit)}
       >
+        {/* Add this indicator of remaining tasks */}
+        <div className="flex justify-between items-center text-muted-foreground text-sm">
+          <span>
+            Daily tasks remaining: {remainingTasksToday}/{MAX_TASKS_PER_DAY}
+          </span>
+          {remainingTasksToday <= 1 && (
+            <span className="font-medium text-orange-500">
+              {remainingTasksToday === 0
+                ? "Limit reached!"
+                : "Last task for today!"}
+            </span>
+          )}
+        </div>
+
         <FormField
           control={form.control}
           name="title"
@@ -187,11 +206,14 @@ const TaskForm: React.FC<TaskFormProps> = ({ task, onSubmit, onCancel }) => {
           <Button type="button" variant="outline" onClick={onCancel}>
             Cancel
           </Button>
-          <Button type="submit" className='bg-epic-purple hover:bg-epic-purple/90'>{task ? "Update Task" : "Create Task"}</Button>
+          <Button
+            type="submit"
+            className="bg-epic-purple hover:bg-epic-purple/90"
+          >
+            {task ? "Update Task" : "Create Task"}
+          </Button>
         </div>
       </form>
     </Form>
   );
 };
-
-export default TaskForm
