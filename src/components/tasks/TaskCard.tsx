@@ -195,7 +195,7 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, onEdit }) => {
                     </DialogDescription>
                   </DialogHeader>
                   <DialogFooter>
-                    <Button variant="outline" onClick={() => {}}>
+                    <Button variant="outline">
                       Cancel
                     </Button>
                     <Button variant="destructive" onClick={handleDelete}>

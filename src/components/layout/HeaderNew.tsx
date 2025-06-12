@@ -23,13 +23,21 @@ const Header: React.FC = () => {
               to="/profile"
               className="flex items-center hover:bg-accent border border-accent rounded-xl"
             >
-              <Avatar className="relative w-10 h-10">
+              <Avatar className="relative mr-2 w-10 h-10">
                 <AvatarImage
                   src={user.avatar || "https://i.pravatar.cc/100"}
                   alt="user avatar"
                 />
                 <AvatarFallback>{user.username?.[0] || "U"}</AvatarFallback>
               </Avatar>
+              <div>
+                <p className="font-medium text-base leading-none">
+                  {user.username}
+                </p>
+                <p className="text-muted-foreground text-xs leading-none">
+                  Level {user.level}
+                </p>
+              </div>
             </Link>
           </div>
         </div>

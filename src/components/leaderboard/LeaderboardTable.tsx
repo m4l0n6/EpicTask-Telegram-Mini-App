@@ -86,7 +86,6 @@ const LeaderboardTable: React.FC = () => {
   return (
     <Card>
       <CardHeader className="relative">
-
         <CardTitle className="text-center">EpicTasks Leaderboard</CardTitle>
       </CardHeader>
       <CardContent>
@@ -109,7 +108,6 @@ const LeaderboardTable: React.FC = () => {
             {leaderboard.slice(0, 10).map((entry) => {
               const rankDisplay = getRankDisplay(entry.rank);
               const isCurrentUser = entry.userId === user?._id;
-
               return (
                 <TableRow
                   key={entry.userId}
@@ -179,7 +177,8 @@ const LeaderboardTable: React.FC = () => {
                         {userRankEntry.username} (You)
                       </span>
                     </div>
-                  </TableCell>                  <TableCell className="font-medium text-right">
+                  </TableCell>                  
+                  <TableCell className="font-medium text-right">
                     {Math.floor(userRankEntry.xp / 100) + 1} {/* Calculate level based on XP */}
                   </TableCell>
                   <TableCell className="font-medium text-right">

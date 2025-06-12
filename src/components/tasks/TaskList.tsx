@@ -171,7 +171,7 @@ const TaskList: React.FC = () => {
                   <p className="mb-4 text-muted-foreground">No tasks found</p>
                   <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
                     <DialogTrigger asChild>
-                      <Button onClick={() => setShowAddDialog(true)}>
+                      <Button onClick={() => setShowAddDialog(true)} className="bg-epic-purple hover:bg-epic-purple/90">
                         Create your first task
                       </Button>
                     </DialogTrigger>

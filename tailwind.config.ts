@@ -126,7 +126,18 @@ const config: Config = {
       },
     },
   },
-  plugins: [],
+  plugins: [
+    function ({ addBase }) {
+      addBase({
+        button: {
+          cursor: "pointer",
+        },
+        '.btn, [type="button"], [type="reset"], [type="submit"]': {
+          cursor: "pointer",
+        },
+      });
+    },
+  ],
 };
 
 export default config;

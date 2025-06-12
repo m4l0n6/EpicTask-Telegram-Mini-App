@@ -172,8 +172,6 @@ export const createMockUsers = () => {
 
 // Định nghĩa API
 export const initializeTelegramApi = () => {
-  // In a real app, we would connect to the Telegram Mini App SDK here
-  // For now, we'll just attach our mock to the window
   window.Telegram = {
     WebApp: mockTelegramWebApp,
   };
