@@ -12,29 +12,33 @@ import { TaskProvider } from "./contexts/TaskContext";
 import { AuthProvider } from "./contexts/AuthContext";
 import { LeaderboardProvider } from "./contexts/LeaderboardContext";
 import { BadgeProvider } from "./contexts/BadgeContext";
+import { TelegramInitializer } from "./components/TelegramInitializer";
 
 const App = () => (
-  <BrowserRouter>
-    <AuthProvider>
-      <BadgeProvider>
-        <TaskProvider>
-          <LeaderboardProvider>
-            <Toaster />
-            <Routes>
-              <Route path="/" element={<AppLayout />}>
-                <Route index element={<HomePage />} />
-                <Route path="tasks" element={<TasksPage />} />
-                <Route path="badges" element={<BadgesPage />} />
-                <Route path="leaderboard" element={<LeaderboardPage />} />
-                <Route path="profile" element={<ProfilePage />} />
-              </Route>
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-          </LeaderboardProvider>
-        </TaskProvider>
-      </BadgeProvider>
-    </AuthProvider>
-  </BrowserRouter>
+  <>
+    <BrowserRouter>
+      <AuthProvider>
+        <TelegramInitializer />
+        <BadgeProvider>
+          <TaskProvider>
+            <LeaderboardProvider>
+              <Toaster />
+              <Routes>
+                <Route path="/" element={<AppLayout />}>
+                  <Route index element={<HomePage />} />
+                  <Route path="tasks" element={<TasksPage />} />
+                  <Route path="badges" element={<BadgesPage />} />
+                  <Route path="leaderboard" element={<LeaderboardPage />} />
+                  <Route path="profile" element={<ProfilePage />} />
+                </Route>
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+            </LeaderboardProvider>
+          </TaskProvider>
+        </BadgeProvider>
+      </AuthProvider>
+    </BrowserRouter>
+  </>
 );
 
 export default App;
