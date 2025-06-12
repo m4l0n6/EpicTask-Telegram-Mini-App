@@ -14,7 +14,6 @@ import { authApi, userApi } from "@/services/api";
 interface AuthContextType {
   user: User | null;
   isLoading: boolean;
-  error: string | null;
   login: () => Promise<void>;
   logout: () => void;
 }
@@ -26,7 +25,6 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
 }) => {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
-  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     // Initialize telegram API
@@ -57,7 +55,6 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
   const login = async (): Promise<void> => {
     try {
       setIsLoading(true);
-      setError(null);
 
       // Trong ứng dụng Telegram thực tế, lấy thông tin user từ Telegram.WebApp.initDataUnsafe
       // Hiện tại vẫn dùng mock để test
@@ -107,12 +104,11 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
           description: "Logged in with mock user data",
         });
       }
-    } catch (err: any) {
+    } catch (err) {
       console.error("Login error:", err);
-      setError(err.message || "Failed to login");
       toast({
         title: "Login failed",
-        description: err.message || "An error occurred during login",
+        description: "An error occurred during login",
         variant: "destructive",
       });
     } finally {
@@ -131,7 +127,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
   };
 
   return (
-    <AuthContext.Provider value={{ user, isLoading, error, login, logout }}>
+    <AuthContext.Provider value={{ user, isLoading, login, logout }}>
       {children}
     </AuthContext.Provider>
   );
