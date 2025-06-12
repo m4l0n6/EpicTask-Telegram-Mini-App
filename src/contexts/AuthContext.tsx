@@ -72,8 +72,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
         saveUser(userData);
         
         toast({
-          title: "Đăng nhập thành công!",
-          description: "Chào mừng bạn đến với EpicTask!",
+          title: "Login successful",
+          description: "Welcome to EpicTask!",
         });
       } else {
         // Trong môi trường dev, sử dụng mock user
@@ -83,7 +83,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
         const telegramUser = window.Telegram?.WebApp?.initDataUnsafe?.user;
         
         if (!telegramUser) {
-          throw new Error("Không tìm thấy dữ liệu người dùng Telegram giả lập");
+          throw new Error("Not found Telegram user data in dev mode");
         }
         
         const userData = await authApi.telegramLogin({
@@ -98,15 +98,15 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
         saveUser(userData);
         
         toast({
-          title: "Đăng nhập phát triển thành công",
-          description: "Đăng nhập với dữ liệu người dùng giả lập",
+          title: "Login successful (Dev Mode)",
+          description: "Login as mock Telegram user",
         });
       }
     } catch (err) {
       console.error("Login error:", err);
       toast({
-        title: "Đăng nhập thất bại",
-        description: "Đã xảy ra lỗi trong quá trình đăng nhập",
+        title: "Failed to login in Telegram",
+        description: "Please try again later",
         variant: "destructive",
       });
     } finally {
