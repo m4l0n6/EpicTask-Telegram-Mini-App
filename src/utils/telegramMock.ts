@@ -77,7 +77,6 @@ export const mockTelegramLogin = async (): Promise<User> => {
     level: 1,
     badges: [],
     completedTasks: 0,
-    tokens: 0,
     lastDailyLogin: null,
     dailyLoginStreak: 0,
     createdAt: new Date().toISOString(),
@@ -99,7 +98,6 @@ export const createMockUsers = () => {
       level: 9,
       badges: [],
       completedTasks: 42,
-      tokens: 200,
       lastDailyLogin: new Date(
         Date.now() - 1 * 24 * 60 * 60 * 1000
       ).toISOString(),
@@ -115,7 +113,6 @@ export const createMockUsers = () => {
       level: 13,
       badges: [],
       completedTasks: 76,
-      tokens: 350,
       lastDailyLogin: new Date(
         Date.now() - 1 * 24 * 60 * 60 * 1000
       ).toISOString(),
@@ -131,7 +128,6 @@ export const createMockUsers = () => {
       level: 16,
       badges: [],
       completedTasks: 108,
-      tokens: 460,
       lastDailyLogin: new Date(
         Date.now() - 1 * 24 * 60 * 60 * 1000
       ).toISOString(),
@@ -147,7 +143,6 @@ export const createMockUsers = () => {
       level: 22,
       badges: [],
       completedTasks: 135,
-      tokens: 590,
       lastDailyLogin: new Date(
         Date.now() - 1 * 24 * 60 * 60 * 1000
       ).toISOString(),
@@ -163,7 +158,6 @@ export const createMockUsers = () => {
       level: 5,
       badges: [],
       completedTasks: 28,
-      tokens: 120,
       lastDailyLogin: new Date(
         Date.now() - 2 * 24 * 60 * 60 * 1000
       ).toISOString(),

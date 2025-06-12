@@ -9,8 +9,7 @@ import { useBadge } from "@/contexts/BadgeContext";
 
 interface TaskContextType {
   tasks: Task[];
-  isLoading: boolean;
-  addTask: (
+  isLoading: boolean;  addTask: (
     taskData: Omit<
       Task,
       | "id"
@@ -18,7 +17,6 @@ interface TaskContextType {
       | "createdAt"
       | "completedAt"
       | "userId"
-      | "tokenReward"
     >
   ) => void;
   updateTask: (taskId: string, taskData: Partial<Task>) => void;
@@ -58,7 +56,6 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setIsLoading(false);
     }
   };
-
   const addTask = async (
   taskData: Omit<
     Task,
@@ -67,7 +64,6 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
     | "createdAt"
     | "completedAt"
     | "userId"
-    | "tokenReward"
   >
 ) => {
   if (!user) {
@@ -88,10 +84,9 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
     });
     return;
   }
-
   try {
-    // Calculate token reward based on XP (default to 20% of XP)
-    const xpReward = Math.min(taskData.xpReward, 100); // Cap XP reward at 100
+    // Cap XP reward to prevent abuse
+    const xpReward = Math.min(taskData.xpReward, 50); // Cap XP reward at 50
 
     // Gọi API để tạo task mới
     const newTask = await taskApi.createTask({
@@ -255,11 +250,13 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
         description: "Task not found.",
         variant: "destructive",
       });
-      return;
-    }
-
-    const response = await taskApi.completeTask(taskId);
-    const { xpGained, tokenGained, leveledUp } = response;
+      return;    }    
+      const response = await taskApi.completeTask(taskId);
+    console.log("Complete task response:", response); // Debug log
+    
+    // Extract the XP earned from the response structure
+    const xpEarned = response?.rewards?.xp || 0;
+    const leveledUp = response?.leveledUp || false;
 
     // Cập nhật state
     setTasks((prevTasks) =>
@@ -277,7 +274,7 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
     // Hiển thị thông báo
     toast({
       title: "Task completed!",
-      description: `You earned ${xpGained} XP and ${tokenGained} tokens${
+      description: `You earned ${xpEarned} XP${
         leveledUp ? " and leveled up!" : "!"
       }`,
       variant: "default",

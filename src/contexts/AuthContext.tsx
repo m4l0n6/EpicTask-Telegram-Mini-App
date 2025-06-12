@@ -6,7 +6,7 @@ import React, {
   ReactNode,
 } from "react";
 import { User } from "@/types";
-import { initializeTelegramApi } from "@/utils/telegramMock"; // Vẫn giữ phần khởi tạo API Telegram
+import { initializeTelegramApi } from "@/utils/telegramMock"; 
 import { getUser, saveUser } from "@/utils/storage";
 import { toast } from "@/hooks/use-toast";
 import { authApi, userApi } from "@/services/api";

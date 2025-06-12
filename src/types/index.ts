@@ -8,7 +8,6 @@ export interface Task {
   createdAt: string; // ISO format string
   updatedAt: string | null; // ISO format string or null
   xpReward: number;
-  tokenReward: number;
   userId: string;
   owner: string;
 }
@@ -21,7 +20,6 @@ export interface User {
   avatar?: string;
   first_name?: string;
   last_name?: string;
-  tokens: number;
   xp: number;
   level: number;
   badges: Badge[];

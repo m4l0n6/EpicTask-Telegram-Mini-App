@@ -79,25 +79,25 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, onEdit }) => {
 
     // Chọn màu viền dựa trên phần thưởng XP
     const getBorderColor = () => {
-      if (task.xpReward >= 80) return "border-epic-purple";
-      if (task.xpReward >= 50) return "border-epic-blue";
-      if (task.xpReward >= 30) return "border-epic-yellow";
+      if (task.xpReward >= 40) return "border-epic-purple";
+      if (task.xpReward >= 25) return "border-epic-blue";
+      if (task.xpReward >= 15) return "border-epic-yellow";
       return "border-gray-200";
     };
 
     // Nhận nhãn độ hiếm dựa trên phần thưởng XP
     const getRarityLabel = () => {
-      if (task.xpReward >= 80) return "Legendary";
-      if (task.xpReward >= 50) return "Epic";
-      if (task.xpReward >= 30) return "Rare";
+      if (task.xpReward >= 40) return "Legendary";
+      if (task.xpReward >= 25) return "Epic";
+      if (task.xpReward >= 15) return "Rare";
       return "Common";
     };
 
     // Nhận lớp màu độ hiếm
     const getRarityColorClass = () => {
-      if (task.xpReward >= 80) return "text-epic-purple";
-      if (task.xpReward >= 50) return "text-epic-blue";
-      if (task.xpReward >= 30) return "text-epic-yellow";
+      if (task.xpReward >= 40) return "text-epic-purple";
+      if (task.xpReward >= 25) return "text-epic-blue";
+      if (task.xpReward >= 15) return "text-epic-yellow";
       return "text-gray-400";
     };
 

@@ -32,7 +32,7 @@ const taskFormSchema = z.object({
   description: z
     .string()
     .min(20, "Decription must be at least 10 characters minimum")
-    .max(500, "Description is too long"),
+    .max(100, "Description is too long"),
   deadline: z
     .date({
       required_error: "Deadline is required",
@@ -44,7 +44,7 @@ const taskFormSchema = z.object({
   xpReward: z.coerce
     .number({ required_error: "XP reward is required" })
     .min(1, "Minimum XP reward is 1")
-    .max(100, "Maximum XP reward is 100"),
+    .max(50, "Maximum XP reward is 50"),
 });
 
 type TaskFormValues = z.infer<typeof taskFormSchema>;
@@ -165,12 +165,12 @@ const TaskForm: React.FC<TaskFormProps> = ({ task, onSubmit, onCancel }) => {
           name="xpReward"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>XP Reward (1-100)</FormLabel>
+              <FormLabel>XP Reward (1-50)</FormLabel>
               <FormControl>
-                <Input type="number" min="1" max="100" {...field} />
+                <Input type="number" min="1" max="50" {...field} />
               </FormControl>
               <FormDescription>
-                Higher XP for more challenging tasks (max 100 XP)
+                Higher XP for more challenging tasks (max 50 XP)
               </FormDescription>
               <FormMessage />
             </FormItem>

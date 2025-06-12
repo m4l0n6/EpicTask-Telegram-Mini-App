@@ -53,7 +53,7 @@ const HomePage: React.FC = () => {
         title: values.title,
         description: values.description || "",
         deadline: values.deadline ? values.deadline.toISOString() : null,
-        xpReward: values.xpReward || 10,
+        xpReward: Math.min(values.xpReward || 10, 50), // Cap XP reward at 50
         updatedAt: new Date().toISOString(), // Add updatedAt property
         owner: user?._id || "", // Add owner property
       };

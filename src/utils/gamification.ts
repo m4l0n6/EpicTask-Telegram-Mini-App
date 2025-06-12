@@ -122,7 +122,7 @@ export const completeTask = async (taskId: string) => {
     const result = await taskApi.completeTask(taskId);
     
     if (result && result.task) {
-      const { task, xpEarned, tokensEarned } = result;
+      const { task, xpEarned } = result;
       
       // Check for task completion badges
       await checkTaskCompletionBadges();
@@ -131,7 +131,6 @@ export const completeTask = async (taskId: string) => {
         task,
         rewards: {
           xp: xpEarned || 0,
-          tokens: tokensEarned || 0,
         },
       };
     }

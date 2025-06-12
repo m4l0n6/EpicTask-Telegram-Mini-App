@@ -77,8 +77,8 @@ const TaskList: React.FC = () => {
         title: values.title || "",
         description: values.description || "",
         deadline: values.deadline ? values.deadline.toISOString() : null,
-        xpReward: values.xpReward || 10,
-        tokenReward: Math.ceil((values.xpReward || 10) / 5), // Phần thưởng token mặc định là 1/5 của XP
+        xpReward: Math.min(values.xpReward || 10, 50), // Ensure XP doesn't exceed 50
+
         updatedAt: values.deadline ? values.deadline.toISOString() : null,
         owner: user?._id || "",
       };
@@ -108,7 +108,6 @@ const TaskList: React.FC = () => {
                 description: values.description || '',
                 deadline: values.deadline ? values.deadline.toISOString() : null,
                 xpReward: values.xpReward || 10,
-                tokenReward: Math.ceil((values.xpReward || 10) / 5), // Phần thưởng token mặc định là 1/5 của XP
                 updatedAt: values.deadline ? values.deadline.toISOString() : null,
                 owner: user?._id || "",
             }
