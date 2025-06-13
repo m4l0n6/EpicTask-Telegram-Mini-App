@@ -138,14 +138,14 @@ export default function TaskForm({
           name="deadline"
           render={({ field }) => (
             <FormItem className="flex flex-col">
-              <FormLabel>Deadline (Optional)</FormLabel>
+              <FormLabel>Deadline (optional)</FormLabel>
               <Popover>
                 <PopoverTrigger asChild>
                   <FormControl>
                     <Button
                       variant="outline"
                       className={cn(
-                        "w-full pl-3 text-left font-normal",
+                        "pl-3 text-left font-normal",
                         !field.value && "text-muted-foreground"
                       )}
                     >
@@ -154,25 +154,25 @@ export default function TaskForm({
                       ) : (
                         <span>Pick a date</span>
                       )}
-                      <CalendarIcon className="opacity-50 ml-auto w-4 h-4" />
+                      <CalendarIcon className="ml-auto w-4 h-4" />
                     </Button>
                   </FormControl>
                 </PopoverTrigger>
                 <PopoverContent className="p-0 w-auto" align="start">
                   <Calendar
                     mode="single"
-                    selected={field.value ?? undefined}
-                    onSelect={field.onChange}
+                    selected={field.value}
+                    onSelect={(date) => {
+                      field.onChange(date);
+                      // Đảm bảo Popover đóng sau khi chọn
+                      document.dispatchEvent(new MouseEvent('click'));
+                    }}
                     disabled={(date) =>
                       date < new Date(new Date().setHours(0, 0, 0, 0))
                     }
-                    initialFocus
                   />
                 </PopoverContent>
               </Popover>
-              <FormDescription>
-                Set a deadline for your task to stay on track
-              </FormDescription>
               <FormMessage />
             </FormItem>
           )}

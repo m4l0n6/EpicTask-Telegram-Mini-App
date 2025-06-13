@@ -7,7 +7,7 @@ import React, {
 } from "react";
 import { User } from "@/types";
 import { initializeTelegramApi } from "@/utils/telegramMock"; 
-import { getUser, saveUser, clearUser, clearAuthToken } from "@/utils/storage";
+import { saveUser, clearUser, clearAuthToken } from "@/utils/storage";
 import { toast } from "@/hooks/use-toast";
 import { authApi, userApi } from "@/services/api";
 import { 
@@ -40,22 +40,21 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
   }, []);
 
   // Kiểm tra xác thực hiện tại
-  const checkAuth = async () => {    try {
+  const checkAuth = async () => {
+    try {
       // Kiểm tra session với backend
       const profile = await userApi.getProfile();
-      setUser(profile);
-    } catch {
-      // Session expired or not valid
-      console.log("Session expired or not found, checking local storage");
       
-      // Kiểm tra local storage
-      const storedUser = getUser();
-      if (storedUser) {
-        setUser(storedUser);
-      } else if (isRunningInTelegram()) {
-        // Nếu đang chạy trong Telegram và không có session, tự động đăng nhập
-        await login();
+      // Bổ sung username từ thông tin Telegram nếu thiếu
+      if (!profile.username && window.Telegram?.WebApp?.initDataUnsafe?.user) {
+        const tgUser = window.Telegram.WebApp.initDataUnsafe.user;
+        profile.username = tgUser.username || 
+          `${tgUser.first_name || ''}${tgUser.last_name ? ' ' + tgUser.last_name : ''}`;
       }
+      
+      setUser(profile);
+    } catch (error) {
+      console.error("Authentication check failed:", error);
     } finally {
       setIsLoading(false);
     }

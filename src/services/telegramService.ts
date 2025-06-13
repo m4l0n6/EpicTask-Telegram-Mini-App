@@ -98,7 +98,13 @@ export const authenticateTelegram = async (): Promise<User> => {
           throw new Error("Xác thực thất bại");
         }
 
-        saveUser(response.data);
+        // Phần xác thực Telegram cần lưu token _id của người dùng
+        if (response.data) {
+          // Lưu ID người dùng làm token xác thực
+          saveAuthToken(response.data._id);
+          saveUser(response.data);
+        }
+
         return response.data;
       }
     }

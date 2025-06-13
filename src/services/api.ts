@@ -19,12 +19,11 @@ api.interceptors.request.use(config => {
   console.log(`Making ${config.method?.toUpperCase()} request to: ${config.baseURL}${config.url}`);
   
   // Lấy token từ localStorage
-  const sessionId = getAuthToken();
-  if (sessionId) {
-    // Thêm cookie header để mô phỏng session
-    config.headers.Cookie = `connect.sid=${sessionId}`;
+  const token = getAuthToken();
+  if (token) {
+    // Sử dụng Bearer token làm phương thức xác thực chính
+    config.headers.Authorization = `Bearer ${token}`;
   }
-  
   return config;
 });
 
