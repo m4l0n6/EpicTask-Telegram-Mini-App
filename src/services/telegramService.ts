@@ -50,23 +50,48 @@ export const authenticateTelegram = async (): Promise<User> => {
   try {
     const initData = getTelegramInitData();
 
-    if (!initData && import.meta.env.PROD) {
+    // Nếu có initData thực, sử dụng nó
+    if (initData) {
+      const response = await api.post("/auth/telegram", {
+        initData: initData,
+      });
+
+      if (!response.data) {
+        throw new Error("Xác thực thất bại");
+      }
+
+      // Lưu thông tin người dùng
+      saveUser(response.data);
+
+      return response.data;
+    }
+    // Trong môi trường dev, gửi dữ liệu giả
+    else if (import.meta.env.DEV) {
+      // Lấy dữ liệu người dùng từ WebApp giả lập hoặc tạo dữ liệu mẫu
+      const userData =
+        window.Telegram?.WebApp?.initDataUnsafe?.user || {
+          id: 12345678,
+          first_name: "Dev",
+          last_name: "User",
+          username: "dev_user",
+          language_code: "en",
+        };
+
+      const response = await api.post("/auth/telegram", {
+        user: userData,
+      });
+
+      if (!response.data) {
+        throw new Error("Xác thực thất bại");
+      }
+
+      // Lưu thông tin người dùng
+      saveUser(response.data);
+
+      return response.data;
+    } else {
       throw new Error("Không thể lấy dữ liệu xác thực Telegram");
     }
-
-    // Gửi initData string hoàn chỉnh để backend xác thực
-    const response = await api.post("/auth/telegram", {
-      initData: initData || "dev_mode", // Trong môi trường dev nếu không có dữ liệu thực
-    });
-
-    if (!response.data) {
-      throw new Error("Xác thực thất bại");
-    }
-
-    // Lưu thông tin người dùng
-    saveUser(response.data);
-
-    return response.data;
   } catch (error) {
     console.error("Xác thực Telegram thất bại:", error);
     throw error;
