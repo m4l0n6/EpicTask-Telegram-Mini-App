@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { getAuthToken } from "@/utils/storage";
 
 // Lấy URL API từ biến môi trường hoặc mặc định
 const API_BASE_URL = import.meta.env.VITE_API_URL;
@@ -16,6 +17,14 @@ const api = axios.create({
 // Thêm interceptor để ghi log request URL (giúp debug)
 api.interceptors.request.use(config => {
   console.log(`Making ${config.method?.toUpperCase()} request to: ${config.baseURL}${config.url}`);
+  
+  // Lấy token từ localStorage
+  const sessionId = getAuthToken();
+  if (sessionId) {
+    // Thêm cookie header để mô phỏng session
+    config.headers.Cookie = `connect.sid=${sessionId}`;
+  }
+  
   return config;
 });
 

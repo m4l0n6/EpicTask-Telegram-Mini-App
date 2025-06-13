@@ -7,7 +7,7 @@ import React, {
 } from "react";
 import { User } from "@/types";
 import { initializeTelegramApi } from "@/utils/telegramMock"; 
-import { getUser, saveUser, clearUser } from "@/utils/storage";
+import { getUser, saveUser, clearUser, clearAuthToken } from "@/utils/storage";
 import { toast } from "@/hooks/use-toast";
 import { authApi, userApi } from "@/services/api";
 import { 
@@ -114,12 +114,13 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
     }
   };
   const logout = () => {
-    setUser(null);
     clearUser();
+    clearAuthToken();
+    setUser(null);
     
     toast({
-      title: "Đã đăng xuất",
-      description: "Bạn đã đăng xuất thành công",
+      title: "Logged Out",
+      description: "You have been logged out successfully.",
     });
   };
 

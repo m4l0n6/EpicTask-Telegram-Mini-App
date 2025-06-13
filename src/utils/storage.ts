@@ -7,7 +7,7 @@ const STORAGE_KEYS = {
     BADGES: 'epicTasks_badges',
     NOTIFICATIONS: 'epicTasks_notifications',
     USERS: 'epicTasks_users', // Cho phần xếp hạng
-    DAILY_TASKS: 'epicTasks_daily_tasks',
+    AUTH_TOKEN: 'epicTasks_auth_token' // Thêm key này
 }
 
 // Các hàm lưu trữ và lấy dữ liệu của người dùng
@@ -100,21 +100,6 @@ export const unlockBadge = (badgeId: string): Badge | null => {
   return null;
 };
 
-// Chắc năng của thông báo
-export const saveNotifications = (notifications: Notification[]): void => {
-  localStorage.setItem(STORAGE_KEYS.NOTIFICATIONS, JSON.stringify(notifications));
-};
-
-export const getNotifications = (): Notification[] => {
-  const notificationsJson = localStorage.getItem(STORAGE_KEYS.NOTIFICATIONS);
-  return notificationsJson ? JSON.parse(notificationsJson) : [];
-};
-
-export const addNotification = (notification: Notification): void => {
-  const notifications = getNotifications();
-  notifications.unshift(notification); // thêm thông báo vào đầu
-  saveNotifications(notifications);
-};
 
 // Các chắc năng của bảng xếp hạng
 export const getUsers = (): User[] =>{
@@ -125,5 +110,18 @@ export const getUsers = (): User[] =>{
 export const saveUsers = (users: User[]): void => {
   localStorage.setItem(STORAGE_KEYS.USERS, JSON.stringify(users));
 };
+
+// Thêm các hàm này
+export const saveAuthToken = (token: string): void => {
+    localStorage.setItem(STORAGE_KEYS.AUTH_TOKEN, token);
+}
+
+export const getAuthToken = (): string | null => {
+    return localStorage.getItem(STORAGE_KEYS.AUTH_TOKEN);
+}
+
+export const clearAuthToken = (): void => {
+    localStorage.removeItem(STORAGE_KEYS.AUTH_TOKEN);
+}
 
 

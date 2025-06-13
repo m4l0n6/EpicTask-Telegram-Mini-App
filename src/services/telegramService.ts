@@ -1,6 +1,6 @@
 import api from "./api";
 import { User } from "@/types";
-import { saveUser } from "@/utils/storage";
+import { saveUser, saveAuthToken } from "@/utils/storage";
 
 // Interface này đã được định nghĩa ở trong types/
 
@@ -71,8 +71,20 @@ export const authenticateTelegram = async (): Promise<User> => {
           throw new Error("Xác thực thất bại");
         }
 
-        // Lưu thông tin người dùng
+        // Lưu thông tin người dùng và token nếu có
         saveUser(response.data);
+
+        // Lưu sessionID như token vào localStorage
+        if (response.headers["set-cookie"]) {
+          const sessionCookie = response.headers["set-cookie"].find((cookie: string) =>
+            cookie.startsWith("connect.sid=")
+          );
+          if (sessionCookie) {
+            const sessionId = sessionCookie.split(";")[0].split("=")[1];
+            saveAuthToken(sessionId);
+          }
+        }
+
         return response.data;
       } else {
         // Fallback nếu không thể trích xuất thông tin người dùng
