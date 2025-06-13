@@ -52,25 +52,47 @@ export const authenticateTelegram = async (): Promise<User> => {
 
     // Nếu có initData thực, sử dụng nó
     if (initData) {
-      // Sửa lại format gửi đi để phù hợp với backend
-      const response = await api.post("/auth/telegram", {
-        user: {
-          initData: initData, // Gửi initData trong trường user
-        },
-      });
+      // Trích xuất thông tin người dùng từ initData nếu có
+      const telegramUser = window.Telegram?.WebApp?.initDataUnsafe?.user;
 
-      if (!response.data) {
-        throw new Error("Xác thực thất bại");
+      if (telegramUser) {
+        // Gửi dữ liệu người dùng theo format mà backend mong đợi
+        const response = await api.post("/auth/telegram", {
+          user: {
+            id: telegramUser.id,
+            username: telegramUser.username,
+            first_name: telegramUser.first_name,
+            last_name: telegramUser.last_name,
+            photo_url: telegramUser.photo_url,
+          },
+        });
+
+        if (!response.data) {
+          throw new Error("Xác thực thất bại");
+        }
+
+        // Lưu thông tin người dùng
+        saveUser(response.data);
+        return response.data;
+      } else {
+        // Fallback nếu không thể trích xuất thông tin người dùng
+        const response = await api.post("/auth/telegram", {
+          user: {
+            initData: initData, // Truyền initData trong trường user
+          },
+        });
+
+        if (!response.data) {
+          throw new Error("Xác thực thất bại");
+        }
+
+        saveUser(response.data);
+        return response.data;
       }
-
-      // Lưu thông tin người dùng
-      saveUser(response.data);
-
-      return response.data;
     }
-    // Trong môi trường dev, gửi dữ liệu giả
+    // Code cho môi trường dev giữ nguyên vì đã đúng format
     else if (import.meta.env.DEV) {
-      // Format này đã đúng, không cần sửa
+      // Đã đúng format, không cần sửa
       const userData =
         window.Telegram?.WebApp?.initDataUnsafe?.user || {
           id: 12345678,
@@ -88,9 +110,7 @@ export const authenticateTelegram = async (): Promise<User> => {
         throw new Error("Xác thực thất bại");
       }
 
-      // Lưu thông tin người dùng
       saveUser(response.data);
-
       return response.data;
     } else {
       throw new Error("Không thể lấy dữ liệu xác thực Telegram");
