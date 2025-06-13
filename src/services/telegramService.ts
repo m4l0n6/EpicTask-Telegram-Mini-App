@@ -52,8 +52,11 @@ export const authenticateTelegram = async (): Promise<User> => {
 
     // Nếu có initData thực, sử dụng nó
     if (initData) {
+      // Sửa lại format gửi đi để phù hợp với backend
       const response = await api.post("/auth/telegram", {
-        initData: initData,
+        user: {
+          initData: initData, // Gửi initData trong trường user
+        },
       });
 
       if (!response.data) {
@@ -67,7 +70,7 @@ export const authenticateTelegram = async (): Promise<User> => {
     }
     // Trong môi trường dev, gửi dữ liệu giả
     else if (import.meta.env.DEV) {
-      // Lấy dữ liệu người dùng từ WebApp giả lập hoặc tạo dữ liệu mẫu
+      // Format này đã đúng, không cần sửa
       const userData =
         window.Telegram?.WebApp?.initDataUnsafe?.user || {
           id: 12345678,
