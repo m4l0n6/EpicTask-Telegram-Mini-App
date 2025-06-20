@@ -7,6 +7,11 @@ const Header: React.FC = () => {
   const { user } = useAuth();
 
   if (!user) return null;
+
+  const displayName = user.username
+    ? `@${user.username}`
+    : `${user.first_name || ""} ${user.last_name || ""}`.trim();
+
   return (
     <header className="top-0 z-10 sticky bg-background/80 shadow-sm backdrop-blur-sm">
       <div className="mx-auto px-4 py-3 container">
@@ -28,11 +33,11 @@ const Header: React.FC = () => {
                   src={user.avatar || "https://i.pravatar.cc/100"}
                   alt="user avatar"
                 />
-                <AvatarFallback>{user.username?.[0] || "U"}</AvatarFallback>
+                <AvatarFallback>{displayName.charAt(0) || "U"}</AvatarFallback>
               </Avatar>
               <div>
                 <p className="font-medium text-base leading-none">
-                  {user.username}
+                  {displayName}
                 </p>
                 <p className="text-muted-foreground text-xs leading-none">
                   Level {user.level}
@@ -47,7 +52,7 @@ const Header: React.FC = () => {
             <div
               className="bg-gradient-to-r from-epic-blue to-epic-purple h-full"
               style={{
-                width: `${(user.xp % 100) / 100 * 100}%`,
+                width: `${((user.xp % 100) / 100) * 100}%`,
               }}
             ></div>
           </div>
