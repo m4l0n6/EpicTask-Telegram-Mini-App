@@ -4,7 +4,14 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useTask } from "@/contexts/TaskContext";
 import { useBadge } from "@/contexts/BadgeContext";
 import { useLeaderboard } from "@/hooks/useLeaderboard";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+  CardFooter,
+} from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { formatDistance } from "date-fns";
 import { Progress } from "@/components/ui/progress";
@@ -25,6 +32,10 @@ const ProfileCard: React.FC = () => {
 
   if (!user) return null;
 
+  const displayName = user.username
+    ? `@${user.username}`
+    : `${user.first_name || ""} ${user.last_name || ""}`.trim();
+
   const daysSinceJoined = user.createdAt
     ? formatDistance(new Date(user.createdAt), new Date(), { addSuffix: false })
     : "unknown";
@@ -34,11 +45,13 @@ const ProfileCard: React.FC = () => {
       <CardHeader className="pb-3">
         <div className="flex flex-col items-center">
           <Avatar className="mb-4 border-4 border-epic-purple w-24 h-24">
-            <AvatarImage src={user.avatar} alt="username" />
-            <AvatarFallback className="text-2xl">Username</AvatarFallback>
+            <AvatarImage src={user.avatar} alt={displayName} />
+            <AvatarFallback className="text-2xl">
+              {displayName.charAt(0)}
+            </AvatarFallback>
           </Avatar>
 
-          <CardTitle className="font-bold text-2xl">{user.username}</CardTitle>
+          <CardTitle className="font-bold text-2xl">{displayName}</CardTitle>
           <CardDescription>Adventurer for {daysSinceJoined}</CardDescription>
         </div>
       </CardHeader>
@@ -99,7 +112,6 @@ const ProfileCard: React.FC = () => {
       </CardFooter>
     </Card>
   );
-  
 };
 
 export default ProfileCard;
