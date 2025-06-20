@@ -1,6 +1,6 @@
 import api from "./api";
 import { User } from "@/types";
-import { saveUser, saveAuthToken } from "@/utils/storage";
+import { saveUser } from "@/utils/storage";
 
 // Interface này đã được định nghĩa ở trong types/
 
@@ -49,6 +49,7 @@ export const getTelegramInitData = (): string | null => {
 export const authenticateTelegram = async (): Promise<User> => {
   try {
     const initData = getTelegramInitData();
+    console.log("initData", initData);
 
     // Nếu có initData thực, sử dụng nó
     if (initData) {
@@ -74,17 +75,6 @@ export const authenticateTelegram = async (): Promise<User> => {
         // Lưu thông tin người dùng và token nếu có
         saveUser(response.data);
 
-        // Lưu sessionID như token vào localStorage
-        if (response.headers["set-cookie"]) {
-          const sessionCookie = response.headers["set-cookie"].find((cookie: string) =>
-            cookie.startsWith("connect.sid=")
-          );
-          if (sessionCookie) {
-            const sessionId = sessionCookie.split(";")[0].split("=")[1];
-            saveAuthToken(sessionId);
-          }
-        }
-
         return response.data;
       } else {
         // Fallback nếu không thể trích xuất thông tin người dùng
@@ -101,7 +91,6 @@ export const authenticateTelegram = async (): Promise<User> => {
         // Phần xác thực Telegram cần lưu token _id của người dùng
         if (response.data) {
           // Lưu ID người dùng làm token xác thực
-          saveAuthToken(response.data._id);
           saveUser(response.data);
         }
 
@@ -158,6 +147,7 @@ export const getTelegramUserInfo = (): {
   photoUrl?: string;
 } | null => {
   if (!window.Telegram?.WebApp?.initDataUnsafe?.user) {
+    console.log("initDataUnsafe object:", window.Telegram.WebApp.initDataUnsafe);
     return null;
   }
 

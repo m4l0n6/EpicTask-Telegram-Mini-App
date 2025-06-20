@@ -6,13 +6,13 @@ import React, {
   ReactNode,
 } from "react";
 import { User } from "@/types";
-import { initializeTelegramApi } from "@/utils/telegramMock"; 
+import { initializeTelegramApi } from "@/utils/telegramMock";
 import { saveUser, clearUser, clearAuthToken } from "@/utils/storage";
 import { toast } from "@/hooks/use-toast";
 import { authApi, userApi } from "@/services/api";
-import { 
-  isRunningInTelegram, 
-  authenticateTelegram
+import {
+  isRunningInTelegram,
+  authenticateTelegram,
 } from "@/services/telegramService";
 
 interface AuthContextType {
@@ -28,7 +28,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
   children,
 }) => {
   const [user, setUser] = useState<User | null>(null);
-  const [isLoading, setIsLoading] = useState<boolean>(true);  useEffect(() => {
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+  useEffect(() => {
     // Trong môi trường dev, khởi tạo mock Telegram API
     if (import.meta.env.DEV && !isRunningInTelegram()) {
       initializeTelegramApi();
@@ -36,7 +37,6 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
 
     // Kiểm tra xác thực
     checkAuth();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Kiểm tra xác thực hiện tại
@@ -44,14 +44,17 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
     try {
       // Kiểm tra session với backend
       const profile = await userApi.getProfile();
-      
+
       // Bổ sung username từ thông tin Telegram nếu thiếu
       if (!profile.username && window.Telegram?.WebApp?.initDataUnsafe?.user) {
         const tgUser = window.Telegram.WebApp.initDataUnsafe.user;
-        profile.username = tgUser.username || 
-          `${tgUser.first_name || ''}${tgUser.last_name ? ' ' + tgUser.last_name : ''}`;
+        profile.username =
+          tgUser.username ||
+          `${tgUser.first_name || ""}${
+            tgUser.last_name ? " " + tgUser.last_name : ""
+          }`;
       }
-      
+
       setUser(profile);
     } catch (error) {
       console.error("Authentication check failed:", error);
@@ -62,14 +65,14 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
   const login = async (): Promise<void> => {
     try {
       setIsLoading(true);
-      
+
       // Kiểm tra nếu đang chạy trong Telegram thực tế
       if (isRunningInTelegram()) {
         // Xác thực qua initData của Telegram
         const userData = await authenticateTelegram();
         setUser(userData);
         saveUser(userData);
-        
+
         toast({
           title: "Login successful",
           description: "Welcome to EpicTask!",
@@ -77,14 +80,14 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
       } else {
         // Trong môi trường dev, sử dụng mock user
         console.log("Using mock Telegram user data for development");
-        
+
         // Gọi API để đăng nhập với dữ liệu giả
         const telegramUser = window.Telegram?.WebApp?.initDataUnsafe?.user;
-        
+
         if (!telegramUser) {
           throw new Error("Not found Telegram user data in dev mode");
         }
-        
+
         const userData = await authApi.telegramLogin({
           id: telegramUser.id,
           username: telegramUser.username || `user${telegramUser.id}`,
@@ -92,10 +95,10 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
           last_name: telegramUser.last_name,
           photo_url: telegramUser.photo_url,
         });
-        
+
         setUser(userData);
         saveUser(userData);
-        
+
         toast({
           title: "Login successful (Dev Mode)",
           description: "Login as mock Telegram user",
@@ -116,7 +119,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
     clearUser();
     clearAuthToken();
     setUser(null);
-    
+
     toast({
       title: "Logged Out",
       description: "You have been logged out successfully.",
