@@ -72,10 +72,16 @@ export const authenticateTelegram = async (): Promise<User> => {
           throw new Error("Xác thực thất bại");
         }
 
-        // Lưu thông tin người dùng và token nếu có
-        saveUser(response.data);
+        // Merge thêm first_name, last_name nếu backend không trả về
+        const mergedUser = {
+          ...response.data,
+          first_name: telegramUser.first_name,
+          last_name: telegramUser.last_name,
+        };
 
-        return response.data;
+        saveUser(mergedUser);
+
+        return mergedUser;
       } else {
         // Fallback nếu không thể trích xuất thông tin người dùng
         const response = await api.post("/auth/telegram", {
