@@ -82,7 +82,7 @@ export const xpForNextLevel = (level: number): number => {
   return level * XP_PER_LEVEL;
 };
 
-// Calculate XP progress percentage towards next level
+// Tính toán tiền trình cấp độ
 export const calculateXpProgress = (user: User): number => {
   const currentLevelXp = (user.level - 1) * XP_PER_LEVEL;
   const nextLevelXp = user.level * XP_PER_LEVEL;

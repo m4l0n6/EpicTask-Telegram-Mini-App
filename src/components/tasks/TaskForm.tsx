@@ -13,34 +13,25 @@ import { Button } from "@/components/ui/button";
 import { useForm } from "react-hook-form";
 import { Task } from "@/types";
 import { z } from "zod";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-import { Calendar } from "@/components/ui/calendar";
 import { CalendarIcon } from "lucide-react";
-import { format } from "date-fns";
-import { cn } from "@/lib/utils";
+import { format, parseISO, startOfDay } from "date-fns";
+import { vi } from "date-fns/locale";
 import { MAX_TASKS_PER_DAY } from "@/utils/gamification";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useTask } from "@/contexts/TaskContext";
 
-// Định ng nghĩa lược đồ biểu mẫu với Zod
+// Định nghĩa lược đồ biểu mẫu với Zod
 const taskFormSchema = z.object({
   title: z.string().min(3, "Title is required").max(100, "Title is too long"),
   description: z
     .string()
-    .min(20, "Decription must be at least 10 characters minimum")
-    .max(100, "Description is too long"),
+    .min(10, "Description must be at least 10 characters minimum") // Sửa lỗi typo
+    .max(500, "Description is too long"), // Tăng giới hạn description
   deadline: z
     .date({
       required_error: "Deadline is required",
     })
-    .min(
-      new Date(new Date().setHours(0, 0, 0, 0)),
-      "Deadline must be in the future"
-    ),
+    .min(startOfDay(new Date()), "Deadline must be today or in the future"),
   xpReward: z.coerce
     .number({ required_error: "XP reward is required" })
     .min(1, "Minimum XP reward is 1")
@@ -55,11 +46,7 @@ interface TaskFormProps {
   onSubmit: (values: TaskFormValues) => void;
 }
 
-export default function TaskForm({
-  task,
-  onSubmit,
-  onCancel,
-}: TaskFormProps) {
+export default function TaskForm({ task, onSubmit, onCancel }: TaskFormProps) {
   const { getTodayTasksCount } = useTask();
   const tasksToday = getTodayTasksCount();
   const remainingTasksToday = MAX_TASKS_PER_DAY - tasksToday;
@@ -82,11 +69,7 @@ export default function TaskForm({
 
   return (
     <Form {...form}>
-      <form
-        action=""
-        className="space-y-4"
-        onSubmit={form.handleSubmit(handleSubmit)}
-      >
+      <form className="space-y-4" onSubmit={form.handleSubmit(handleSubmit)}>
         {/* Add this indicator of remaining tasks */}
         <div className="flex justify-between items-center text-muted-foreground text-sm">
           <span>
@@ -125,6 +108,7 @@ export default function TaskForm({
                 <Textarea
                   placeholder="Enter task description"
                   className="resize-none"
+                  rows={3}
                   {...field}
                 />
               </FormControl>
@@ -136,46 +120,55 @@ export default function TaskForm({
         <FormField
           control={form.control}
           name="deadline"
-          render={({ field }) => (
-            <FormItem className="flex flex-col">
-              <FormLabel>Deadline (optional)</FormLabel>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <FormControl>
-                    <Button
-                      variant="outline"
-                      className={cn(
-                        "pl-3 text-left font-normal",
-                        !field.value && "text-muted-foreground"
-                      )}
-                    >
-                      {field.value ? (
-                        format(field.value, "PPP")
-                      ) : (
-                        <span>Pick a date</span>
-                      )}
-                      <CalendarIcon className="ml-auto w-4 h-4" />
-                    </Button>
-                  </FormControl>
-                </PopoverTrigger>
-                <PopoverContent className="p-0 w-auto" align="start">
-                  <Calendar
-                    mode="single"
-                    selected={field.value}
-                    onSelect={(date) => {
-                      field.onChange(date);
-                      // Đảm bảo Popover đóng sau khi chọn
-                      document.dispatchEvent(new MouseEvent('click'));
-                    }}
-                    disabled={(date) =>
-                      date < new Date(new Date().setHours(0, 0, 0, 0))
-                    }
-                  />
-                </PopoverContent>
-              </Popover>
-              <FormMessage />
-            </FormItem>
-          )}
+          render={({ field }) => {
+            // Format date cho HTML input (YYYY-MM-DD)
+            const formatDateForInput = (date: Date | undefined) => {
+              if (!date) return "";
+              return format(date, "yyyy-MM-dd");
+            };
+
+            // Parse date từ HTML input string
+            const parseDateFromInput = (dateString: string) => {
+              if (!dateString) return undefined;
+              return parseISO(dateString + "T00:00:00");
+            };
+
+            // Ngày tối thiểu (hôm nay)
+            const minDate = format(new Date(), "yyyy-MM-dd");
+
+            return (
+              <FormItem>
+                <FormLabel>Deadline</FormLabel>
+                <FormControl>
+                  <div className="relative">
+                    <Input
+                      type="date"
+                      min={minDate}
+                      value={formatDateForInput(field.value)}
+                      onChange={(e) => {
+                        const date = parseDateFromInput(e.target.value);
+                        field.onChange(date);
+                      }}
+                      className="pl-10"
+                    />
+                    <CalendarIcon className="top-1/2 left-3 absolute opacity-50 w-4 h-4 -translate-y-1/2 transform" />
+                  </div>
+                </FormControl>
+                {field.value && (
+                  <FormDescription>
+                    Deadline:{" "}
+                    {format(field.value, "dd-MM-yyyy", { locale: vi })}
+                  </FormDescription>
+                )}
+                {!field.value && (
+                  <FormDescription>
+                    Chọn deadline cho task của bạn
+                  </FormDescription>
+                )}
+                <FormMessage />
+              </FormItem>
+            );
+          }}
         />
 
         <FormField
@@ -185,7 +178,13 @@ export default function TaskForm({
             <FormItem>
               <FormLabel>XP Reward (1-50)</FormLabel>
               <FormControl>
-                <Input type="number" min="1" max="50" {...field} />
+                <Input
+                  type="number"
+                  min="1"
+                  max="50"
+                  placeholder="10"
+                  {...field}
+                />
               </FormControl>
               <FormDescription>
                 Higher XP for more challenging tasks (max 50 XP)
@@ -197,7 +196,7 @@ export default function TaskForm({
 
         {!task && (
           <FormDescription>
-            You've created {tasksToday}/10 tasks today
+            You've created {tasksToday}/{MAX_TASKS_PER_DAY} tasks today
           </FormDescription>
         )}
 
@@ -208,6 +207,7 @@ export default function TaskForm({
           <Button
             type="submit"
             className="bg-epic-purple hover:bg-epic-purple/90"
+            disabled={remainingTasksToday === 0 && !task}
           >
             {task ? "Update Task" : "Create Task"}
           </Button>
@@ -215,4 +215,4 @@ export default function TaskForm({
       </form>
     </Form>
   );
-};
+}
