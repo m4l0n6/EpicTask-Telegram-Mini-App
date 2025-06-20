@@ -49,7 +49,6 @@ export const getTelegramInitData = (): string | null => {
 export const authenticateTelegram = async (): Promise<User> => {
   try {
     const initData = getTelegramInitData();
-    console.log("initData", initData);
 
     // Nếu có initData thực, sử dụng nó
     if (initData) {
@@ -57,6 +56,7 @@ export const authenticateTelegram = async (): Promise<User> => {
       const telegramUser = window.Telegram?.WebApp?.initDataUnsafe?.user;
 
       if (telegramUser) {
+        console.log("telegramUser", telegramUser);
         // Gửi dữ liệu người dùng theo format mà backend mong đợi
         const response = await api.post("/auth/telegram", {
           user: {
