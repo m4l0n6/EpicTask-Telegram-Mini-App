@@ -45,7 +45,7 @@ export const LeaderboardProvider: React.FC<{ children: ReactNode }> = ({
         rank: number;
       }) => ({
         userId: entry.userId,
-        username: entry.username,
+        username: entry.username || `User ${entry.userId.substring(0, 6)}...`, // Fallback
         avatarUrl: entry.avatar, // Map avatar to avatarUrl
         xp: entry.score || 0,    // Map score to xp
         level: Math.floor((entry.score || 0) / 100) + 1, // Calculate level based on XP

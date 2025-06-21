@@ -61,7 +61,13 @@ export const authenticateTelegram = async (): Promise<User> => {
         const response = await api.post("/auth/telegram", {
           user: {
             id: telegramUser.id,
-            username: telegramUser.username,
+            // Tạo username dự phòng sử dụng first_name và last_name nếu username không có sẵn
+            username:
+              telegramUser.username ||
+              `${telegramUser.first_name || ""}${
+                telegramUser.last_name ? " " + telegramUser.last_name : ""
+              }`.trim() ||
+              `user${telegramUser.id}`,
             first_name: telegramUser.first_name,
             last_name: telegramUser.last_name,
             photo_url: telegramUser.photo_url,
