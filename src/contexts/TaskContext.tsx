@@ -4,6 +4,7 @@ import { Task } from "@/types";
 import { useAuth } from "./AuthContext";
 import { taskApi } from "@/services/api";
 import { toast } from "@/hooks/use-toast";
+import { MAX_TASKS_PER_DAY } from "@/utils/gamification";
 
 import { useBadge } from "@/contexts/BadgeContext";
 
@@ -27,7 +28,7 @@ interface TaskContextType {
 }
 
 const TaskContext = createContext<TaskContextType | undefined>(undefined);
-const MAX_TASKS_PER_DAY = 5;
+
 
 export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [tasks, setTasks] = useState<Task[]>([]);
@@ -184,11 +185,10 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
   return todayTasks.length;
 };
 
-
   const getCompletedTasksCount = () => {
     if (!user) return 0;
 
-    return tasks.filter((task) => task.completed && task.userId === user._id)
+    return tasks.filter((task) => task.completed && task.owner === user._id)
       .length;
   };
 

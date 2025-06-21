@@ -9,7 +9,7 @@ const Header: React.FC = () => {
   if (!user) return null;
 
   const displayName = user.username
-    ? `@${user.username}`
+    ? `${user.username}`
     : `${user.first_name || ""} ${user.last_name || ""}`.trim();
 
   return (
