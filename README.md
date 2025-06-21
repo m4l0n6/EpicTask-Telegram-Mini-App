@@ -4,7 +4,7 @@ Epic Task là một ứng dụng to-do list với trải nghiệm thú vị, tr�
 
 ## Link telegram mini app
 
-[Epic Task](https://t.me/b23dccc103_bot/epictask)
+[t.me/b23dccc103_bot/epictask](https://t.me/b23dccc103_bot/epictask)
 
 ## Công nghệ sử dụng
 
