@@ -33,7 +33,7 @@ const ProfileCard: React.FC = () => {
   if (!user) return null;
 
   const displayName = user.username
-    ? `@${user.username}`
+    ? `${user.username}`
     : `${user.first_name || ""} ${user.last_name || ""}`.trim();
 
   const daysSinceJoined = user.createdAt
@@ -62,7 +62,7 @@ const ProfileCard: React.FC = () => {
           <div className="flex justify-between items-center">
             <span className="font-medium text-sm">Level {user.level}</span>
             <span className="text-muted-foreground text-sm">
-              {xpInCurrentLevel} / {100} XP to Level {user.level + 1}
+              {xpInCurrentLevel} / {100} XP
             </span>
           </div>
           <Progress value={xpProgress} className="h-2" />

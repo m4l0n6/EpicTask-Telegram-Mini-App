@@ -162,7 +162,7 @@ export default function TaskForm({ task, onSubmit, onCancel }: TaskFormProps) {
                 )}
                 {!field.value && (
                   <FormDescription>
-                    Chọn deadline cho task của bạn
+                    Choose a deadline for your task
                   </FormDescription>
                 )}
                 <FormMessage />
@@ -184,6 +184,7 @@ export default function TaskForm({ task, onSubmit, onCancel }: TaskFormProps) {
                   max="50"
                   placeholder="10"
                   {...field}
+                  disabled={!!task} // Disable if editing existing task
                 />
               </FormControl>
               <FormDescription>
