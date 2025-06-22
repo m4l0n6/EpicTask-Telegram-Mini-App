@@ -140,7 +140,7 @@ const TaskList: React.FC = () => {
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <Button variant="outline" size="sm">
-                      <ListFilter className="mr-1 w-4 h-4" />
+                      <ListFilter className="mr-1 w-4 h-4 pointer-events-auto" />
                       Sort
                     </Button>
                   </DropdownMenuTrigger>
