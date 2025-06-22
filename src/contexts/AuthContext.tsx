@@ -77,6 +77,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
         toast({
           title: "Login successful",
           description: "Welcome to EpicTask!",
+          variant: "success",
         });
       } else {
         // Trong môi trường dev, sử dụng mock user
@@ -103,6 +104,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
         toast({
           title: "Login successful (Dev Mode)",
           description: "Login as mock Telegram user",
+          variant: "success",
         });
       }
     } catch (err) {
@@ -124,6 +126,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
     toast({
       title: "Logged Out",
       description: "You have been logged out successfully.",
+      variant: "success",
     });
   };
   const updateUserData = async () => {
