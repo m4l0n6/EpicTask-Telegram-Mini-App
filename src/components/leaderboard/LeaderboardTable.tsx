@@ -23,6 +23,8 @@ const LeaderboardTable: React.FC = () => {
     refreshLeaderboard(); 
   }, []);
 
+  const totalUsers = leaderboard.length;
+
   if (isLoading) {
     console.log(leaderboard)
     return <Loading message="Loading leaderboard..." />;
@@ -89,7 +91,8 @@ const LeaderboardTable: React.FC = () => {
         <CardTitle className="text-center">EpicTasks Leaderboard</CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="flex justify-end mb-4">
+        <div className="flex justify-between items-center mb-4">
+          <div className="p-2 border-2 rounded-xl">{totalUsers} adventurers competing</div>
           <Button onClick={refreshLeaderboard} variant="outline" size="sm">
             <RefreshCw className="mr-2 w-4 h-4" />
             Refresh
@@ -122,7 +125,7 @@ const LeaderboardTable: React.FC = () => {
                     <div className="flex items-center gap-2">
                       <Avatar className="w-8 h-8">
                         <AvatarImage
-                          src={entry.avatarUrl|| ""}
+                          src={entry.avatarUrl || ""}
                           alt={entry.username || ""}
                         />
                         <AvatarFallback>
@@ -133,8 +136,10 @@ const LeaderboardTable: React.FC = () => {
                         {entry.username} {isCurrentUser && "(You)"}
                       </span>
                     </div>
-                  </TableCell>                  <TableCell className="font-medium text-right">
-                    {Math.floor(entry.xp / 100) + 1} {/* Calculate level based on XP */}
+                  </TableCell>{" "}
+                  <TableCell className="font-medium text-right">
+                    {Math.floor(entry.xp / 100) + 1}{" "}
+                    {/* Calculate level based on XP */}
                   </TableCell>
                   <TableCell className="font-medium text-right">
                     {entry.xp || 0} {/* Hiển thị 0 nếu không có xp */}
@@ -170,16 +175,19 @@ const LeaderboardTable: React.FC = () => {
                           alt={userRankEntry.username || ""}
                         />
                         <AvatarFallback>
-                          {(userRankEntry.username ?? "").substring(0, 2).toUpperCase()}
+                          {(userRankEntry.username ?? "")
+                            .substring(0, 2)
+                            .toUpperCase()}
                         </AvatarFallback>
                       </Avatar>
                       <span className="font-bold">
                         {userRankEntry.username} (You)
                       </span>
                     </div>
-                  </TableCell>                  
+                  </TableCell>
                   <TableCell className="font-medium text-right">
-                    {Math.floor(userRankEntry.xp / 100) + 1} {/* Calculate level based on XP */}
+                    {Math.floor(userRankEntry.xp / 100) + 1}{" "}
+                    {/* Calculate level based on XP */}
                   </TableCell>
                   <TableCell className="font-medium text-right">
                     {userRankEntry.xp}
