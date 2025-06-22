@@ -255,7 +255,6 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const response = await taskApi.completeTask(taskId);
     console.log("Complete task response:", response); // Debug log
     
-    // Extract the XP earned from the response structure
     const xpEarned = response?.xpAwarded || 0;
     const leveledUp = response?.leveledUp || false;
 
