@@ -82,7 +82,7 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
     toast({
       title: "Daily Limit Reached",
       description: `You can only create ${MAX_TASKS_PER_DAY} tasks per day to maintain balance.`,
-      variant: "destructive",
+      variant: "warning",
     });
     return;
   }
@@ -104,6 +104,7 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
     toast({
       title: "Task Added",
       description: `"${newTask.title}" has been added to your tasks.`,
+      variant: "success",
     });
     
     return newTask; // Trả về task mới được tạo
@@ -154,6 +155,7 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
       toast({
         title: "Task Updated",
         description: `"${updatedTask.title}" has been updated.`,
+        variant: "success",
       });
     } catch (error) {
       toast({
@@ -277,7 +279,7 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
       description: `You earned ${xpEarned} XP${
         leveledUp ? " and leveled up!" : "!"
       }`,
-      variant: "default",
+      variant: "success",
     });
 
     // Cập nhật người dùng với XP mới
@@ -298,7 +300,7 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
         toast({
           title: "Badge Unlocked! 🎉",
           description: `You've earned the "${badge.title}" badge!`,
-          variant: "default",
+          variant: "success",
         });
       });
     }

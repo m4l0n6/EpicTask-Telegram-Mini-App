@@ -92,7 +92,9 @@ const LeaderboardTable: React.FC = () => {
       </CardHeader>
       <CardContent>
         <div className="flex justify-between items-center mb-4">
-          <div className="p-2">{totalUsers} adventurers competing</div>
+          <div className="p-2">
+            {totalUsers} adventurers competing
+          </div>
           <Button onClick={refreshLeaderboard} variant="outline" size="sm">
             <RefreshCw className="mr-2 w-4 h-4" />
             Refresh
