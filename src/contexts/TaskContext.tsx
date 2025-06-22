@@ -33,7 +33,7 @@ const TaskContext = createContext<TaskContextType | undefined>(undefined);
 export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const { user } = useAuth();
+  const { user, updateUserData } = useAuth();
   const { refreshBadges } = useBadge();
 
   useEffect(() => {
@@ -280,6 +280,9 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }`,
       variant: "default",
     });
+
+    // Cập nhật người dùng với XP mới
+    await updateUserData();
 
     // Làm mới huy hiệu để kiểm tra nếu đã mở khóa huy hiệu mới
     await refreshBadges();

@@ -20,6 +20,7 @@ interface AuthContextType {
   isLoading: boolean;
   login: () => Promise<void>;
   logout: () => void;
+  updateUserData: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -125,9 +126,24 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
       description: "You have been logged out successfully.",
     });
   };
+  const updateUserData = async () => {
+    try {
+      setIsLoading(true);
+      // Lấy thông tin người dùng mới từ API
+      const userData = await userApi.getProfile();
+      setUser(userData);
+      saveUser(userData);
+    } catch (error) {
+      console.error("Failed to update user data:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   return (
-    <AuthContext.Provider value={{ user, isLoading, login, logout }}>
+    <AuthContext.Provider
+      value={{ user, isLoading, login, logout, updateUserData }}
+    >
       {children}
     </AuthContext.Provider>
   );

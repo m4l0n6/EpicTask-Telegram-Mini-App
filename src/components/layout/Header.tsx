@@ -4,9 +4,9 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Link } from "react-router-dom";
 
 const Header: React.FC = () => {
-  const { user } = useAuth();
+  const { user, isLoading } = useAuth();
 
-  if (!user) return null;
+  if ( isLoading || !user) return null;
 
   const displayName = user.username
     ? `${user.username}`
