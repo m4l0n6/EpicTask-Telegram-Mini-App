@@ -4,6 +4,7 @@ import { Star } from "lucide-react";
 import { Badge } from "../components/ui/badge";
 import { useTask } from "@/contexts/TaskContext";
 import { useAuth } from "@/contexts/AuthContext";
+import { useLeaderboard } from "@/hooks/useLeaderboard";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "../components/ui/card";
 import { MAX_TASKS_PER_DAY } from "@/utils/gamification";
 import { Button } from "../components/ui/button";
@@ -20,6 +21,7 @@ const HomePage: React.FC = () => {
   const [showAddDialog, setShowAddDialog] = useState(false);
   const { tasks, getTodayTasksCount, addTask } = useTask();
   const tasksToday = getTodayTasksCount();
+  const {userRank} = useLeaderboard();
   const remainingTasksToday = MAX_TASKS_PER_DAY - tasksToday;
   const { user } = useAuth();
 
@@ -93,15 +95,17 @@ const HomePage: React.FC = () => {
           </div>
           <CardDescription className="flex items-center">
             <div
-              className={`px-2 py-1 rounded-md text-white bg-gradient-to-r ${getLevelDisplayClass()} from-epic-yellow to-amber-400 mr-2 font-bold`}
+              className={`px-2 py-1 rounded-md text-white bg-gradient-to-r ${getLevelDisplayClass()} mr-2 font-bold`}
             >
               Level {user?.level}
             </div>
-            <span>Newbie</span>
+            <span>
+              {(user?.level ?? 0) >= 20 ? "Epic " : (user?.level ?? 0) >= 10 ? "Skilled " : "Newbie"} 
+            </span>
             <span className="mx-2">•</span>
             <div className="flex items-center">
               <Crown className="mr-1 w-4 h-4 text-epic-yellow" />
-              <span>Rank #1</span>
+              <span>Rank {userRank}</span>
             </div>
           </CardDescription>
         </CardHeader>
