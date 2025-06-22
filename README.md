@@ -1,10 +1,9 @@
 # Epic Task - Task Gamification App
 
+![Epic Task Banner](public/banner.png)
+
 Epic Task là một ứng dụng to-do list với trải nghiệm thú vị, trực quan và có yếu tố game hóa, giúp người dùng quản lý công việc hàng ngày một cách hiệu quả và vui vẻ hơn.
 
-## Link telegram mini app
-
-[t.me/b23dccc103_bot/epictask](https://t.me/b23dccc103_bot/epictask)
 
 ## Công nghệ sử dụng
 
